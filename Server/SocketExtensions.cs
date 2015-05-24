@@ -5,8 +5,9 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using Extensions;
+using Common;
 
-namespace ColorConquer
+namespace Server
 {
 	public static class SocketExtensions
 	{
@@ -23,10 +24,9 @@ namespace ColorConquer
 					break;
 				}
 				var packetBytes = await socket.ReceiveAsync(length);
-				var message = packetBytes.GetStringUTF8();
-				message.Dump();
 
-				socket.SendAsync(message);
+				var user = socket.GetUser();
+				var packetType = (PacketType)packetBytes.Take(sizeof(int)).ToArray().ConvertToInt32();
 			}
 		}
 

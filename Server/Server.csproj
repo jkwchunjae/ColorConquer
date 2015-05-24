@@ -41,6 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Center.cs" />
     <Compile Include="ColorConquerGame.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -56,9 +57,9 @@
       <Project>{5b845d86-ae90-40bc-9950-25f4d03c016a}</Project>
       <Name>Extensions</Name>
     </ProjectReference>
-    <ProjectReference Include="..\ColorConquer\ColorConquer.csproj">
-      <Project>{647fc291-8d33-45ad-a698-53d4fcfc07f8}</Project>
-      <Name>ColorConquer</Name>
+    <ProjectReference Include="..\Common\Common.csproj">
+      <Project>{5f597925-4881-404d-81b2-86ccc68d44ed}</Project>
+      <Name>Common</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

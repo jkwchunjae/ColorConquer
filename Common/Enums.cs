@@ -4,11 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ColorConquer
+namespace Common
 {
-	public enum PacketHeader
+	public enum PacketType
 	{
-
+		EnterChannel,
+		CreateRoom,
+		EnterRoom,
+		LeaveRoom,
+		LeaveChannel,
+		StartGame,
+		SetColor,
 	}
 
 	public enum Color
