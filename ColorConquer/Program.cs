@@ -4,8 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Extensions;
-using Server;
 using Common;
+using Server;
+using ClientConsole;
 
 namespace ColorConquer
 {
@@ -13,18 +14,18 @@ namespace ColorConquer
 	{
 		static void Main(string[] args)
 		{
-			User Alice = new User();
-			User Bob = new User();
-
-			var game = new ColorConquerGame(Alice, Bob);
-			game.StartGame();
-
 			while (true)
 			{
-				var color = Console.ReadLine();
-				"input: {0}".With(color);
-				game.SetColor(game.CurrentTurn, (Color)Enum.Parse(typeof(Color), color));
-				game.Print();
+				Console.Write("Mode (Server(s), ClientConsole(cc)) : ");
+				var mode = Console.ReadLine().ToLower();
+				if (mode == "server" || mode == "s")
+				{
+					(new ColorConquerServer()).Start(5519);
+				}
+				else if (mode == "clientConsole".ToLower() || mode == "cc")
+				{
+					(new ClientConsole.ClientConsole()).StartClient("localhost", 5519);
+				}
 			}
 		}
 	}

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Extensions;
 using Common;
 
-namespace Server
+namespace ClientConsole
 {
 	public static class SocketExtensions
 	{

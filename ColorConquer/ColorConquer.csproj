@@ -52,6 +52,10 @@
       <Project>{5b845d86-ae90-40bc-9950-25f4d03c016a}</Project>
       <Name>Extensions</Name>
     </ProjectReference>
+    <ProjectReference Include="..\ClientConsole\ClientConsole.csproj">
+      <Project>{3143349d-ca36-46ec-90ea-76d3fb5e5262}</Project>
+      <Name>ClientConsole</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Common\Common.csproj">
       <Project>{5f597925-4881-404d-81b2-86ccc68d44ed}</Project>
       <Name>Common</Name>

@@ -8,6 +8,7 @@ namespace Common
 {
 	public enum PacketType
 	{
+		#region Client -> Server
 		EnterChannel,
 		CreateRoom,
 		EnterRoom,
@@ -15,6 +16,19 @@ namespace Common
 		LeaveChannel,
 		StartGame,
 		SetColor,
+		#endregion
+
+		#region Server -> Client
+		RoomList,
+		#endregion
+	}
+
+	public enum UserStatus
+	{
+		Channel,
+		EnterRoomWaiting,
+		Room,
+		GameRunning,
 	}
 
 	public enum Color

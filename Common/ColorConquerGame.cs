@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Common;
 using Extensions;
 
-namespace Server
+namespace Common
 {
 	public class ColorConquerGame
 	{

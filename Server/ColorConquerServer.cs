@@ -9,15 +9,7 @@ using System.Net;
 
 namespace Server
 {
-	class Program
-	{
-		static void Main(string[] args)
-		{
-
-		}
-	}
-
-	class ColorConquerServer
+	public class ColorConquerServer
 	{
 		public void Start(int port)
 		{
