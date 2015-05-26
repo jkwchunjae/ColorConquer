@@ -10,11 +10,12 @@ namespace Server
 {
 	public static class PacketProcessor
 	{
-		public static void ProcessPacket(this Socket socket, PacketType packetType, string json = "")
+		public static void ProcessPacket(Socket socket, PacketType packetType, string json = "")
 		{
 			var user = socket.GetUser();
 			switch (packetType)
 			{
+				/*
 				case PacketType.EnterChannel:
 					ColorConquerCenter.EnterUser(user);
 					break;
@@ -35,6 +36,7 @@ namespace Server
 					break;
 				case PacketType.SetColor:
 					break;
+				*/
 			}
 		}
 	}

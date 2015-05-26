@@ -42,7 +42,6 @@
     <Compile Include="ClientConsole.cs" />
     <Compile Include="PacketProcessor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SocketExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Extensions\Extensions\Extensions.csproj">

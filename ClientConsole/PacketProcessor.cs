@@ -11,7 +11,7 @@ namespace ClientConsole
 {
 	public static class PacketProcessor
 	{
-		public static void ProcessPacket(this Socket socket, PacketType packetType, string json = "")
+		public static void ProcessPacket(Socket socket, PacketType packetType, string json = "")
 		{
 			switch (packetType)
 			{

@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 using Extensions;
 using Common;
 
-namespace Server
+namespace Common
 {
 	public static class SocketExtensions
 	{
-		public static async void ReceiveLoop(this Socket socket)
+		public static async void ReceiveLoop(this Socket socket, Action<Socket, PacketType, string /* json */> processPacket)
 		{
 			while (true)
 			{
@@ -21,7 +21,7 @@ namespace Server
 					"Recv length: {0}".With(length).Dump();
 					if (length == 0)
 					{
-						socket.ProcessPacket(PacketType.LeaveChannel);
+						processPacket(socket, PacketType.LeaveChannel, null);
 						socket.Shutdown(SocketShutdown.Both);
 						socket.Close();
 						break;
@@ -29,11 +29,12 @@ namespace Server
 					var packetBytes = await socket.ReceiveAsync(length);
 					var packetType = (PacketType)packetBytes.Take(sizeof(int)).ToArray().ConvertToInt32();
 					"Recv type: {0}".With(packetType.ToString()).Dump();
-					socket.ProcessPacket(packetType, packetBytes.Skip(sizeof(int)).ToArray().GetStringUTF8());
+					//socket.ProcessPacket(packetType, packetBytes.Skip(sizeof(int)).ToArray().GetStringUTF8());
+					processPacket(socket, packetType, packetBytes.Skip(sizeof(int)).ToArray().GetStringUTF8());
 				}
 				catch
 				{
-					socket.ProcessPacket(PacketType.LeaveChannel);
+					processPacket(socket, PacketType.LeaveChannel, null);
 					socket.Shutdown(SocketShutdown.Both);
 					socket.Close();
 					break;

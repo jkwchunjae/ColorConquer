@@ -22,7 +22,7 @@ namespace ClientConsole
 		{
 			socket.Connect(host, port);
 
-			socket.ReceiveLoop();
+			socket.ReceiveLoop(PacketProcessor.ProcessPacket);
 
 			EnterChannel();
 

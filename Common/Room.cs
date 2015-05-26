@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Extensions;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Common
@@ -13,8 +14,9 @@ namespace Common
 		HashSet<string> _roomNameSet = new HashSet<string>();
 		public string ToJsonString()
 		{
-			var roomListJson = new JObject(new JProperty("RoomList", this.Select(e => e.ToJson())));
-			return roomListJson.ToString();
+			return JsonConvert.SerializeObject(this.Select(e => e.ToJson()));
+			//var roomListJson = new JObject(new JProperty("RoomList", this.Select(e => e.ToJson())));
+			//return roomListJson.ToString();
 		}
 
 		public bool CreateRoom(string roomName)

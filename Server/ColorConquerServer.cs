@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Extensions;
 using System.Net;
+using Common;
 
 namespace Server
 {
@@ -25,7 +26,7 @@ namespace Server
 				{
 					"Before Accept".Dump();
 					var clientSocket = listener.Accept();
-					clientSocket.ReceiveLoop();
+					clientSocket.ReceiveLoop(PacketProcessor.ProcessPacket);
 				}
 			}
 			catch (Exception ex)

@@ -44,6 +44,7 @@
     <Compile Include="JsonObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Room.cs" />
+    <Compile Include="SocketExtensions.cs" />
     <Compile Include="User.cs" />
   </ItemGroup>
   <ItemGroup>
