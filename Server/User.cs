@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using Common;
 
-namespace Common
+namespace Server
 {
 	public class User
 	{

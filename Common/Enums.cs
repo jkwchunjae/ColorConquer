@@ -9,9 +9,23 @@ namespace Common
 	public enum PacketType
 	{
 		#region Client -> Server
+		TryEnterChannel,
+		RequestRoomList,
+		TryCreateRoom,
+		TryEnterRoom,
+		TryStartGame,
 		#endregion
 
 		#region Server -> Client
+		ResultEnterChannel,
+		ResultRoomList,
+		ResultEnterRoom,
+		ResultStartGame,
+		#endregion
+
+		#region Others
+		ChatRoom,
+		Shutdown,
 		#endregion
 	}
 
@@ -21,6 +35,8 @@ namespace Common
 		TryEnterChannel,
 		TryCreateRoom,
 		TryEnterRoom,
+		TryStartGame,
+		GameStarted,
 	}
 
 	public enum UserPlace

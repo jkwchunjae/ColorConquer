@@ -16,15 +16,16 @@ namespace ColorConquer
 		{
 			while (true)
 			{
+				int port = 5591;
 				Console.Write("Mode (Server(s), ClientConsole(cc)) : ");
 				var mode = Console.ReadLine().ToLower();
 				if (mode == "server" || mode == "s")
 				{
-					(new ColorConquerServer()).Start(5519);
+					(new ColorConquerServer()).Start(port);
 				}
 				else if (mode == "clientConsole".ToLower() || mode == "cc")
 				{
-					(new ClientConsole.ClientConsole()).StartClient("localhost", 5519);
+					(new ClientConsole.ClientConsole()).StartClient("localhost", port);
 				}
 			}
 		}

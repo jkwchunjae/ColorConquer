@@ -6,21 +6,38 @@ using System.Threading.Tasks;
 using Common;
 using Extensions;
 
-namespace Common
+namespace Server
 {
 	public class ColorConquerGame
 	{
-		User Alice, Bob;
+		public User Alice, Bob;
 		User _currentTurn;
 		Board _board;
-		Cell[,] Cells { get { return _board.Cells; } }
 		int _size;
 		int _countColor;
 
+		Cell[,] Cells { get { return _board.Cells; } }
+		public User CurrentTurn { get { return _currentTurn; } }
+		public int Size { get { return _size; } }
+		public int CountColor { get { return _countColor; } }
+		public List<string> CellsColor
+		{
+			get
+			{
+				var cellsColor = new List<string>();
+				for (var row = 0; row < _size; row++)
+				{
+					var colors = string.Empty;
+					for (var col = 0; col < _size; col++)
+						colors += Cells[row, col].Color.ToString();
+					cellsColor.Add(colors);
+				}
+				return cellsColor;
+			}
+		}
+
 		Dictionary<User, HashSet<Cell>> MyCells;
 		Dictionary<User, HashSet<Cell>> EdgeCells;
-
-		public User CurrentTurn { get { return _currentTurn; } }
 
 		static int[] dx = new int[] { 1, 0, -1, 0 };
 		static int[] dy = new int[] { 0, 1, 0, -1 };
@@ -80,6 +97,11 @@ namespace Common
 			SetUser(Bob, _size - 1, _size - 1);
 			Print();
 			return true;
+		}
+
+		public string GetStatus()
+		{
+			return "";
 		}
 
 		void SetUser(User user, int row, int col)

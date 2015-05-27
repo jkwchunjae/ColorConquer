@@ -10,22 +10,22 @@ using Common;
 
 namespace Server
 {
-	static public class ColorConquerCenter
+	public static class ColorConquerCenter
 	{
-		//static public ConcurrentDictionary<Room, int /* 의미 없음 */> RoomList = new ConcurrentDictionary<Room, int>();
-		static public RoomList RoomList = new RoomList();
-		static public ConcurrentDictionary<User, Room> UserRoomDic = new ConcurrentDictionary<User, Room>();
+		//public static ConcurrentDictionary<Room, int /* 의미 없음 */> RoomList = new ConcurrentDictionary<Room, int>();
+		public static RoomList RoomList = new RoomList();
+		public static ConcurrentDictionary<User, Room> UserRoomDic = new ConcurrentDictionary<User, Room>();
 
 		static ColorConquerCenter() { }
 
-		static public bool EnterUser(User user)
+		public static bool EnterChannel(User user)
 		{
 			"EnterUser".Dump();
-			user.SendRoomList(RoomList);
+			//user.SendRoomList(RoomList);
 			return UserRoomDic.TryAdd(user, null);
 		}
 
-		static public void LeaveUser(User user)
+		public static void LeaveChannel(User user)
 		{
 			"LeaveUser".Dump();
 			LeaveRoom(user);
@@ -33,27 +33,35 @@ namespace Server
 			UserRoomDic.TryRemove(user, out room); // dic 에서도 지운다.
 		}
 
-		//static public IEnumerable<Room> GetRoomList()
+		//public static IEnumerable<Room> GetRoomList()
 		//{
 		//	return RoomList.AsEnumerable().Select(e => e.Key);
 		//}
 
-		static public bool CreateRoom(User user, Room room)
+		public static bool CreateRoom(User user, string roomName)
 		{
-			"CreateRoom: {0}".With(room.RoomName).Dump();
+			"CreateRoom: {0}".With(roomName).Dump();
 			if (user == null) return false;
-			//var room = new Room(roomName);
-			//RoomList.TryAdd(room, 0);
-			RoomList.CreateRoom(room.RoomName);
-			return EnterRoom(user, room.RoomName);
+			var room = new Room(roomName);
+			if (RoomList.CreateRoom(room.RoomName))
+			{
+				return EnterRoom(user, room.RoomName);
+			}
+			else
+			{
+				return false;
+			}
 		}
 
-		static public bool EnterRoom(User user, string roomName)
+		public static bool EnterRoom(User user, string roomName)
 		{
 			"EnterRoom".Dump();
 			if (user == null || roomName == null || roomName.Length == 0) return false;
 
-			var room = RoomList.Where(e => e.RoomName == roomName).FirstOrDefault();
+			if (UserRoomDic[user] != null) return false;
+
+			var room = RoomList.Find(roomName);
+			if (room == null) return false;
 
 			lock (room)
 			{
@@ -67,7 +75,7 @@ namespace Server
 			return false;
 		}
 
-		static public bool LeaveRoom(User user)
+		public static bool LeaveRoom(User user)
 		{
 			"LeaveRoom".Dump();
 			if (user == null) return false;

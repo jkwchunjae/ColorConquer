@@ -4,13 +4,16 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
-using Common;
 using System.Threading;
+using Common;
+using Extensions;
 
 namespace ClientConsole
 {
 	public class ClientConsole
 	{
+		string _host;
+		int _port;
 		Socket socket;
 
 		public ClientConsole()
@@ -20,31 +23,19 @@ namespace ClientConsole
 
 		public void StartClient(string host, int port)
 		{
+			_host = host;
+			_port = port;
 			socket.Connect(host, port);
 
 			socket.ReceiveLoop(PacketProcessor.ProcessPacket);
 
-			EnterChannel();
+			if (!User.TryLogin()) return;
 
-			//(new Thread(() =>
-			//{
-			//	while (true)
-			//	{
-			//		Console.Write("Command: ");
-			//		var command = Console.ReadLine();
+			DoCommand(PacketType.TryEnterChannel);
 
-			//		PacketType packetType;
-			//		if (Enum.TryParse<PacketType>(command, out packetType))
-			//		{
-			//			DoCommand(packetType);
-			//		}
-			//	}
-			//})).Start();
-			
 			while (true)
 			{
-				Console.Write("Command: ");
-				var command = Console.ReadLine();
+				var command = Utils.Input("Command");
 
 				PacketType packetType;
 				if (Enum.TryParse<PacketType>(command, out packetType))
@@ -54,31 +45,51 @@ namespace ClientConsole
 			}
 		}
 
-		public void EnterChannel()
-		{
-			socket.SendAsync(PacketType.EnterChannel);
-		}
-
 		public void DoCommand(PacketType packetType)
 		{
 			switch (packetType)
 			{
-				#region CreateRoom
-				case PacketType.CreateRoom:
+				#region TryEnterChannel
+				case PacketType.TryEnterChannel:
 					{
-						Console.Write("RoomName: ");
-						var roomName = Console.ReadLine();
-						socket.SendAsync(packetType, (new Room(roomName)).ToJsonString());
+						socket.TryEnterChannel(User.UserName);
 						break;
 					}
 				#endregion
 
-				#region EnterRoom
-				case PacketType.EnterRoom:
+				#region TryCreateRoom
+				case PacketType.TryCreateRoom:
 					{
-						Console.Write("RoomName: ");
-						var roomName = Console.ReadLine();
-						socket.SendAsync(packetType, roomName);
+						var roomName = Utils.Input("RoomName");
+						socket.TryCreateRoom(roomName);
+						break;
+					}
+				#endregion
+
+				#region TryEnterRoom
+				case PacketType.TryEnterRoom:
+					{
+						var roomName = Utils.Input("RoomName");
+						socket.TryEnterRoom(roomName);
+						break;
+					}
+				#endregion
+
+				#region ChatRoom
+				case PacketType.ChatRoom:
+					{
+						var message = Utils.Input("Message");
+						socket.ChatRoom(message);
+						break;
+					}
+				#endregion
+
+				#region TryStartGame
+				case PacketType.TryStartGame:
+					{
+						var size = Utils.Input("Size").ToInt();
+						var countColor = Utils.Input("CountColor").ToInt();
+						socket.TryStartGame(size, countColor);
 						break;
 					}
 				#endregion

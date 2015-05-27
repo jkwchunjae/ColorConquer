@@ -27,10 +27,5 @@ namespace Server
 		{
 			user.Socket.SendAsync(packetType, json);
 		}
-
-		public static void SendRoomList(this User user, RoomList roomList)
-		{
-			user.SendAsync(PacketType.RoomList, roomList.ToJsonString());
-		}
 	}
 }

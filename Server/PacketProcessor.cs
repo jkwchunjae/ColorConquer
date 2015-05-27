@@ -4,7 +4,10 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using System.Dynamic;
 using Common;
+using Extensions;
+using Newtonsoft.Json;
 
 namespace Server
 {
@@ -13,30 +16,137 @@ namespace Server
 		public static void ProcessPacket(Socket socket, PacketType packetType, string json = "")
 		{
 			var user = socket.GetUser();
+			if (user == null) return;
 			switch (packetType)
 			{
-				/*
-				case PacketType.EnterChannel:
-					ColorConquerCenter.EnterUser(user);
-					break;
-				case PacketType.LeaveChannel:
-					ColorConquerCenter.LeaveUser(user);
-					break;
-				#region CreateRoom
-				case PacketType.CreateRoom:
-					ColorConquerCenter.CreateRoom(user, json.Deserialize<Room>());
-					break;
+				#region TryEnterChannel
+				case PacketType.TryEnterChannel:
+					{
+						var result = ColorConquerCenter.EnterChannel(user);
+						var obj = json.JsonDeserialize();
+						user.UserName = (string)obj.UserName;
+						user.ResultEnterChannel(result);
+						break;
+					}
 				#endregion
-				case PacketType.EnterRoom:
-					ColorConquerCenter.EnterRoom(user, json);
-					break;
-				case PacketType.LeaveRoom:
-					break;
-				case PacketType.StartGame:
-					break;
-				case PacketType.SetColor:
-					break;
-				*/
+
+				#region RequestRoomList
+				case PacketType.RequestRoomList:
+					{
+						user.ResultRoomList();
+						break;
+					}
+				#endregion
+
+				#region TryCreateRoom
+				case PacketType.TryCreateRoom:
+					{
+						dynamic obj = json.JsonDeserialize();
+						var roomName = (string)obj.RoomName;
+						var result = ColorConquerCenter.CreateRoom(user, roomName);
+						user.ResultEnterRoom(result, roomName);
+						break;
+					}
+				#endregion
+
+				#region TryEnterRoom
+				case PacketType.TryEnterRoom:
+					{
+						dynamic obj = json.JsonDeserialize();
+						var roomName = (string)obj.RoomName;
+						var result = ColorConquerCenter.EnterRoom(user, roomName);
+						user.ResultEnterRoom(result, roomName);
+						break;
+					}
+				#endregion
+
+				#region ChatRoom
+				case PacketType.ChatRoom:
+					{
+						if (!ColorConquerCenter.UserRoomDic.ContainsKey(user)) break;
+						var room = ColorConquerCenter.UserRoomDic[user];
+						dynamic obj = json.JsonDeserialize();
+						var message = (string)obj.Message;
+						room.Chat(user, message);
+						break;
+					}
+				#endregion
+
+				#region TryStartGame
+				case PacketType.TryStartGame:
+					{
+						if (!ColorConquerCenter.UserRoomDic.ContainsKey(user)) break;
+						var room = ColorConquerCenter.UserRoomDic[user];
+						dynamic obj = json.JsonDeserialize();
+						int size = ((string)obj.Size).ToInt();
+						int countColor = ((string)obj.CountColor).ToInt();
+						var result = room.StartGame(size, countColor);
+						room.ResultStartGame(result);
+						break;
+					}
+				#endregion
+
+				#region Shutdown
+				case PacketType.Shutdown:
+					{
+						ColorConquerCenter.LeaveChannel(user);
+						break;
+					}
+				#endregion
+			}
+		}
+
+		public static void ResultEnterChannel(this User user, bool result)
+		{
+			dynamic obj = new ExpandoObject();
+			obj.Result = result ? "true" : "false";
+			string json = JsonConvert.SerializeObject(obj);
+			user.SendAsync(PacketType.ResultEnterChannel, json);
+		}
+
+		public static void ResultRoomList(this User user)
+		{
+			user.SendAsync(PacketType.ResultRoomList, ColorConquerCenter.RoomList.ToJsonString());
+		}
+
+		public static void ResultEnterRoom(this User user, bool result, string roomName)
+		{
+			dynamic obj = new ExpandoObject();
+			obj.Result = result ? "true" : "false";
+			obj.RoomName = roomName;
+			string json = JsonConvert.SerializeObject(obj);
+			user.SendAsync(PacketType.ResultEnterRoom, json);
+		}
+
+		public static void ChatRoom(this User user, string speakerName, string message)
+		{
+			dynamic obj = new ExpandoObject();
+			obj.SpeakerName = speakerName;
+			obj.Message = message;
+			string json = JsonConvert.SerializeObject(obj);
+			user.SendAsync(PacketType.ChatRoom, json);
+		}
+
+		public static void ResultStartGame(this Room room, bool result)
+		{
+			dynamic obj = new ExpandoObject();
+			obj.Result = result ? "true" : "false";
+			if (result)
+			{
+				var game = room.Game;
+				obj.Size = game.Size;
+				obj.CountColor = game.CountColor;
+				obj.CurrentTurnName = game.CurrentTurn.UserName;
+				obj.AliceName = game.Alice.UserName;
+				obj.BobName = game.Bob.UserName;
+				obj.AliceColor = game.Alice.CurrentColor.ToString();
+				obj.BobColor = game.Bob.CurrentColor.ToString();
+				obj.CellsColor = game.CellsColor;
+			}
+			string json = JsonConvert.SerializeObject(obj);
+			foreach (var user in room.GetUsers())
+			{
+				user.SendAsync(PacketType.ResultStartGame, json);
 			}
 		}
 	}

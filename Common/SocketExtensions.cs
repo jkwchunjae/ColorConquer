@@ -21,7 +21,7 @@ namespace Common
 					"Recv length: {0}".With(length).Dump();
 					if (length == 0)
 					{
-						processPacket(socket, PacketType.LeaveChannel, null);
+						processPacket(socket, PacketType.Shutdown, null);
 						socket.Shutdown(SocketShutdown.Both);
 						socket.Close();
 						break;
@@ -34,7 +34,7 @@ namespace Common
 				}
 				catch
 				{
-					processPacket(socket, PacketType.LeaveChannel, null);
+					processPacket(socket, PacketType.Shutdown, null);
 					socket.Shutdown(SocketShutdown.Both);
 					socket.Close();
 					break;

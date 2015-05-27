@@ -7,34 +7,56 @@ using Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Common
+namespace Server
 {
 	public class RoomList: List<Room>
 	{
-		HashSet<string> _roomNameSet = new HashSet<string>();
+		Dictionary<string, Room> _roomNameDic = new Dictionary<string, Room>();
 		public string ToJsonString()
 		{
 			return JsonConvert.SerializeObject(this.Select(e => e.ToJson()));
-			//var roomListJson = new JObject(new JProperty("RoomList", this.Select(e => e.ToJson())));
-			//return roomListJson.ToString();
 		}
 
 		public bool CreateRoom(string roomName)
 		{
-			lock (_roomNameSet)
+			lock (_roomNameDic)
 			{
-				if (_roomNameSet.Contains(roomName)) return false;
-				_roomNameSet.Add(roomName);
-				this.Add(new Room(roomName));
+				if (_roomNameDic.ContainsKey(roomName)) return false;
+				var room = new Room(roomName);
+				_roomNameDic.Add(roomName, room);
+				this.Add(room);
 			}
 			return true;
+		}
+
+		public void DeleteRoom(string roomName)
+		{
+			lock(_roomNameDic)
+			{
+				if (_roomNameDic.ContainsKey(roomName))
+				{
+					var room  = _roomNameDic[roomName];
+					_roomNameDic.Remove(roomName);
+					this.Remove(room);
+				}
+			}
+		}
+
+		public Room Find(string roomName)
+		{
+			lock (_roomNameDic)
+			{
+				if (_roomNameDic.ContainsKey(roomName))
+					return _roomNameDic[roomName];
+				return null;
+			}
 		}
 	}
 
 	public class Room
 	{
 		User Alice, Bob;
-		ColorConquerGame Game;
+		public ColorConquerGame Game;
 		public string RoomName;
 
 		public Room(string roomName)
@@ -55,6 +77,12 @@ namespace Common
 		public string ToJsonString()
 		{
 			return this.ToJson().ToString();
+		}
+
+		public IEnumerable<User> GetUsers()
+		{
+			if (Alice != null) yield return Alice;
+			if (Bob != null) yield return Bob;
 		}
 
 		public bool IsEmpty { get { return (Alice == null && Bob == null); } }
@@ -87,6 +115,14 @@ namespace Common
 
 			if (user == Alice) Alice = null;
 			if (user == Bob) Bob = null;
+		}
+
+		public void Chat(User speaker, string message)
+		{
+			foreach (var user in this.GetUsers())
+			{
+				user.ChatRoom(speaker.UserName, message);
+			}
 		}
 
 		public bool StartGame(int size, int countColor)
