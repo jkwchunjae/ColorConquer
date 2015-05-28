@@ -22,10 +22,17 @@ namespace Server
 				#region TryEnterChannel
 				case PacketType.TryEnterChannel:
 					{
-						var result = ColorConquerCenter.EnterChannel(user);
-						var obj = json.JsonDeserialize();
-						user.UserName = (string)obj.UserName;
-						user.ResultEnterChannel(result);
+						try
+						{
+							var result = ColorConquerCenter.EnterChannel(user);
+							var obj = json.JsonDeserialize();
+							user.UserName = (string)obj.UserName;
+							user.ResultEnterChannel(result);
+						}
+						catch
+						{
+							user.ResultEnterChannel(false);
+						}
 						break;
 					}
 				#endregion
@@ -33,7 +40,11 @@ namespace Server
 				#region RequestRoomList
 				case PacketType.RequestRoomList:
 					{
-						user.ResultRoomList();
+						try
+						{
+							user.ResultRoomList();
+						}
+						catch { }
 						break;
 					}
 				#endregion
@@ -41,10 +52,17 @@ namespace Server
 				#region TryCreateRoom
 				case PacketType.TryCreateRoom:
 					{
-						dynamic obj = json.JsonDeserialize();
-						var roomName = (string)obj.RoomName;
-						var result = ColorConquerCenter.CreateRoom(user, roomName);
-						user.ResultEnterRoom(result, roomName);
+						try
+						{
+							dynamic obj = json.JsonDeserialize();
+							var roomName = (string)obj.RoomName;
+							var result = ColorConquerCenter.CreateRoom(user, roomName);
+							user.ResultEnterRoom(result, roomName);
+						}
+						catch
+						{
+							user.ResultEnterRoom(false);
+						}
 						break;
 					}
 				#endregion
@@ -52,10 +70,17 @@ namespace Server
 				#region TryEnterRoom
 				case PacketType.TryEnterRoom:
 					{
-						dynamic obj = json.JsonDeserialize();
-						var roomName = (string)obj.RoomName;
-						var result = ColorConquerCenter.EnterRoom(user, roomName);
-						user.ResultEnterRoom(result, roomName);
+						try
+						{
+							dynamic obj = json.JsonDeserialize();
+							var roomName = (string)obj.RoomName;
+							var result = ColorConquerCenter.EnterRoom(user, roomName);
+							user.ResultEnterRoom(result, roomName);
+						}
+						catch
+						{
+							user.ResultEnterRoom(false);
+						}
 						break;
 					}
 				#endregion
@@ -65,9 +90,13 @@ namespace Server
 					{
 						if (!ColorConquerCenter.UserRoomDic.ContainsKey(user)) break;
 						var room = ColorConquerCenter.UserRoomDic[user];
-						dynamic obj = json.JsonDeserialize();
-						var message = (string)obj.Message;
-						room.Chat(user, message);
+						try
+						{
+							dynamic obj = json.JsonDeserialize();
+							var message = (string)obj.Message;
+							room.Chat(user, message);
+						}
+						catch { }
 						break;
 					}
 				#endregion
@@ -77,11 +106,18 @@ namespace Server
 					{
 						if (!ColorConquerCenter.UserRoomDic.ContainsKey(user)) break;
 						var room = ColorConquerCenter.UserRoomDic[user];
-						dynamic obj = json.JsonDeserialize();
-						int size = ((string)obj.Size).ToInt();
-						int countColor = ((string)obj.CountColor).ToInt();
-						var result = room.StartGame(size, countColor);
-						room.ResultStartGame(result);
+						try
+						{
+							dynamic obj = json.JsonDeserialize();
+							int size = ((string)obj.Size).ToInt();
+							int countColor = ((string)obj.CountColor).ToInt();
+							var result = room.StartGame(size, countColor);
+							room.ResultStartGame(result);
+						}
+						catch
+						{
+							room.ResultStartGame(false);
+						}
 						break;
 					}
 				#endregion
@@ -106,14 +142,17 @@ namespace Server
 
 		public static void ResultRoomList(this User user)
 		{
-			user.SendAsync(PacketType.ResultRoomList, ColorConquerCenter.RoomList.ToJsonString());
+			user.SendAsync(PacketType.ResultRoomList, ColorConquerCenter.RoomList.JsonString);
 		}
 
-		public static void ResultEnterRoom(this User user, bool result, string roomName)
+		public static void ResultEnterRoom(this User user, bool result, string roomName = null)
 		{
 			dynamic obj = new ExpandoObject();
 			obj.Result = result ? "true" : "false";
-			obj.RoomName = roomName;
+			if (result)
+			{
+				obj.RoomName = roomName;
+			}
 			string json = JsonConvert.SerializeObject(obj);
 			user.SendAsync(PacketType.ResultEnterRoom, json);
 		}

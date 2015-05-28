@@ -27,17 +27,25 @@ namespace ClientConsole
 				#region ResultEnterChannel
 				case PacketType.ResultEnterChannel:
 					{
-						dynamic obj = JsonConvert.DeserializeObject(json);
-						string result = (string)obj.Result;
-						if (User.Status != UserStatus.TryEnterChannel) break;
-						User.Status = UserStatus.None;
-						if (result == "true")
+						try
 						{
-							User.Place = UserPlace.Channel;
-							socket.RequestRoomList();
+							dynamic obj = JsonConvert.DeserializeObject(json);
+							string result = (string)obj.Result;
+							if (User.Status != UserStatus.TryEnterChannel) break;
+							User.Status = UserStatus.None;
+							if (result == "true")
+							{
+								User.Place = UserPlace.Channel;
+								socket.RequestRoomList();
+							}
+							else
+							{
+							}
 						}
-						else
+						catch
 						{
+							User.Status = UserStatus.None;
+							User.Place = UserPlace.None;
 						}
 						break;
 					}
@@ -46,12 +54,16 @@ namespace ClientConsole
 				#region ResultRoomList
 				case PacketType.ResultRoomList:
 					{
-						List<dynamic> roomList = json.JsonDeserialize<List<dynamic>>();
-						"RoomList Count: {0}".With(roomList.Count).Dump();
-						foreach (var room in roomList)
+						try
 						{
-							"Room: {0}".With((string)room.RoomName).Dump();
+							List<dynamic> roomList = json.JsonDeserialize<List<dynamic>>();
+							"RoomList Count: {0}".With(roomList.Count).Dump();
+							foreach (var room in roomList)
+							{
+								"Room: {0}".With((string)room.RoomName).Dump();
+							}
 						}
+						catch { }
 						break;
 					}
 				#endregion
@@ -59,18 +71,25 @@ namespace ClientConsole
 				#region ResultEnterRoom
 				case PacketType.ResultEnterRoom:
 					{
-						if (!User.IsValid(UserStatus.TryEnterRoom)) break;
-						dynamic obj = JsonConvert.DeserializeObject(json);
-						string result = (string)obj.Result;
-						string roomName = (string)obj.RoomName;
-						User.Status = UserStatus.None;
-						if (result == "false")
+						try
 						{
-							"EnterRoom Fail.. {0}".With(roomName).Dump();
-							return;
+							if (!User.IsValid(UserStatus.TryEnterRoom)) break;
+							dynamic obj = JsonConvert.DeserializeObject(json);
+							string result = (string)obj.Result;
+							string roomName = (string)obj.RoomName;
+							User.Status = UserStatus.None;
+							if (result == "false")
+							{
+								"EnterRoom Fail.. {0}".With(roomName).Dump();
+								return;
+							}
+							"EnterRoom Success!! {0}".With(roomName).Dump();
+							User.Place = UserPlace.Room;
 						}
-						"EnterRoom Success!! {0}".With(roomName).Dump();
-						User.Place = UserPlace.Room;
+						catch
+						{
+							User.Status = UserStatus.None;
+						}
 						break;
 					}
 				#endregion
@@ -78,11 +97,15 @@ namespace ClientConsole
 				#region ChatRoom
 				case PacketType.ChatRoom:
 					{
-						if (!User.IsValid(UserPlace.Room)) break;
-						dynamic obj = JsonConvert.DeserializeObject(json);
-						string speakerName = (string)obj.SpeakerName;
-						string message = (string)obj.Message;
-						"{0}: {1}".With(speakerName, message).Dump();
+						try
+						{
+							if (!User.IsValid(UserPlace.Room)) break;
+							dynamic obj = JsonConvert.DeserializeObject(json);
+							string speakerName = (string)obj.SpeakerName;
+							string message = (string)obj.Message;
+							"{0}: {1}".With(speakerName, message).Dump();
+						}
+						catch { }
 						break;
 					}
 				#endregion
@@ -90,33 +113,39 @@ namespace ClientConsole
 				#region ResultStartGame
 				case PacketType.ResultStartGame:
 					{
-						if (!User.IsValid(UserPlace.Room)) break;
-						dynamic obj = json.JsonDeserialize();
-						string result = (string)obj.Result;
-						if (result == "false")
+						try
+						{
+							if (!User.IsValid(UserPlace.Room)) break;
+							dynamic obj = json.JsonDeserialize();
+							string result = (string)obj.Result;
+							if (result == "false")
+							{
+								User.Status = UserStatus.None;
+								break;
+							}
+							User.Status = UserStatus.GameStarted;
+							int size = ((string)obj.Size).ToInt();
+							int countColor = ((string)obj.CountColor).ToInt();
+							string currentTurnName = (string)obj.CurrentTurnName;
+							string aliceName = (string)obj.AliceName;
+							string bobName = (string)obj.BobName;
+							string aliceColor = (string)obj.AliceColor;
+							string bobColor = (string)obj.BobColor;
+							List<string> cellsColor = ((JArray)obj.CellsColor).Select(e => e.ToString()).ToList();
+
+							User.CurrentColor = User.UserName == aliceName ? aliceColor : bobColor;
+
+							"Size: {0}".With(size).Dump();
+							"Countcolor: {0}".With(countColor).Dump();
+							"CurrentTurnName: {0}".With(currentTurnName).Dump();
+							"Cells".Dump();
+							foreach (var colors in cellsColor)
+								colors.Dump();
+						}
+						catch
 						{
 							User.Status = UserStatus.None;
-							break;
 						}
-						User.Status = UserStatus.GameStarted;
-						int size = ((string)obj.Size).ToInt();
-						int countColor = ((string)obj.CountColor).ToInt();
-						string currentTurnName = (string)obj.CurrentTurnName;
-						string aliceName = (string)obj.AliceName;
-						string bobName = (string)obj.BobName;
-						string aliceColor = (string)obj.AliceColor;
-						string bobColor = (string)obj.BobColor;
-						List<string> cellsColor = ((JArray)obj.CellsColor).Select(e => e.ToString()).ToList();
-
-						User.CurrentColor = User.UserName == aliceName ? aliceColor : bobColor;
-
-						"Size: {0}".With(size).Dump();
-						"Countcolor: {0}".With(countColor).Dump();
-						"CurrentTurnName: {0}".With(currentTurnName).Dump();
-						"Cells".Dump();
-						foreach (var colors in cellsColor)
-							colors.Dump();
-
 						break;
 					}
 				#endregion

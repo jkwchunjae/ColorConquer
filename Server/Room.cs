@@ -12,9 +12,19 @@ namespace Server
 	public class RoomList: List<Room>
 	{
 		Dictionary<string, Room> _roomNameDic = new Dictionary<string, Room>();
-		public string ToJsonString()
+		string _jsonString;
+		public string JsonString { get { return _jsonString; } }
+
+		public RoomList()
 		{
-			return JsonConvert.SerializeObject(this.Select(e => e.ToJson()));
+			this.UpdateJsonString(false);
+		}
+
+		public string UpdateJsonString(bool isBroadcast = true)
+		{
+			_jsonString = JsonConvert.SerializeObject(this.Select(e => e.ToJson()));
+			if (isBroadcast) ColorConquerCenter.BroadcastRoomList();
+			return _jsonString;
 		}
 
 		public bool CreateRoom(string roomName)
@@ -26,6 +36,7 @@ namespace Server
 				_roomNameDic.Add(roomName, room);
 				this.Add(room);
 			}
+			this.UpdateJsonString();
 			return true;
 		}
 
@@ -40,6 +51,7 @@ namespace Server
 					this.Remove(room);
 				}
 			}
+			this.UpdateJsonString();
 		}
 
 		public Room Find(string roomName)
@@ -103,6 +115,7 @@ namespace Server
 			{
 				return false;
 			}
+			ColorConquerCenter.RoomList.UpdateJsonString();
 			return true;
 		}
 
@@ -115,6 +128,7 @@ namespace Server
 
 			if (user == Alice) Alice = null;
 			if (user == Bob) Bob = null;
+			ColorConquerCenter.RoomList.UpdateJsonString();
 		}
 
 		public void Chat(User speaker, string message)
@@ -131,9 +145,9 @@ namespace Server
 
 			Game = new ColorConquerGame(Alice, Bob, size, countColor);
 			Game.StartGame();
+			ColorConquerCenter.RoomList.UpdateJsonString();
 
 			return true;
 		}
 	}
-
 }

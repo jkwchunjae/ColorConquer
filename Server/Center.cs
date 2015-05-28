@@ -13,10 +13,14 @@ namespace Server
 	public static class ColorConquerCenter
 	{
 		//public static ConcurrentDictionary<Room, int /* 의미 없음 */> RoomList = new ConcurrentDictionary<Room, int>();
-		public static RoomList RoomList = new RoomList();
-		public static ConcurrentDictionary<User, Room> UserRoomDic = new ConcurrentDictionary<User, Room>();
+		public static RoomList RoomList = null;
+		public static ConcurrentDictionary<User, Room> UserRoomDic = null;
 
-		static ColorConquerCenter() { }
+		static ColorConquerCenter()
+		{
+			RoomList = new RoomList();
+			UserRoomDic = new ConcurrentDictionary<User, Room>();
+		}
 
 		public static bool EnterChannel(User user)
 		{
@@ -32,11 +36,6 @@ namespace Server
 			Room room;
 			UserRoomDic.TryRemove(user, out room); // dic 에서도 지운다.
 		}
-
-		//public static IEnumerable<Room> GetRoomList()
-		//{
-		//	return RoomList.AsEnumerable().Select(e => e.Key);
-		//}
 
 		public static bool CreateRoom(User user, string roomName)
 		{
@@ -88,11 +87,21 @@ namespace Server
 				room.LeaveUser(user);
 				//int tmp;
 				//if (room.IsEmpty) RoomList.TryRemove(room, out tmp);
-				if (room.IsEmpty) RoomList.Remove(room);
+				if (room.IsEmpty)
+				{
+					RoomList.DeleteRoom(room.RoomName);
+				}
 				UserRoomDic.TryUpdate(user, null, room);
 				"LeaveRoom Success".Dump();
 			}
 			return true;
+		}
+
+		public static void BroadcastRoomList()
+		{
+			if (UserRoomDic == null) return;
+			foreach (var user in UserRoomDic.Where(e => e.Value == null).Select(e => e.Key))
+				user.ResultRoomList();
 		}
 	}
 }
