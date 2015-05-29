@@ -13,7 +13,7 @@ namespace Server
 {
 	public static class PacketProcessor
 	{
-		public static void ProcessPacket(Socket socket, PacketType packetType, string json = "")
+		public static void ProcessPacket(Socket socket, PacketType packetType, byte[] bytes)
 		{
 			var user = socket.GetUser();
 			if (user == null) return;
@@ -24,6 +24,7 @@ namespace Server
 					{
 						try
 						{
+							string json = bytes.RsaDecrypt().GetStringUTF8();
 							var result = ColorConquerCenter.EnterChannel(user);
 							var obj = json.JsonDeserialize();
 							user.UserName = (string)obj.UserName;
@@ -54,6 +55,7 @@ namespace Server
 					{
 						try
 						{
+							string json = bytes.RsaDecrypt().GetStringUTF8();
 							dynamic obj = json.JsonDeserialize();
 							var roomName = (string)obj.RoomName;
 							var result = ColorConquerCenter.CreateRoom(user, roomName);
@@ -72,6 +74,7 @@ namespace Server
 					{
 						try
 						{
+							string json = bytes.GetStringUTF8();
 							dynamic obj = json.JsonDeserialize();
 							var roomName = (string)obj.RoomName;
 							var result = ColorConquerCenter.EnterRoom(user, roomName);
@@ -88,6 +91,7 @@ namespace Server
 				#region ChatRoom
 				case PacketType.ChatRoom:
 					{
+						string json = bytes.GetStringUTF8();
 						if (!ColorConquerCenter.UserRoomDic.ContainsKey(user)) break;
 						var room = ColorConquerCenter.UserRoomDic[user];
 						try
@@ -104,6 +108,7 @@ namespace Server
 				#region TryStartGame
 				case PacketType.TryStartGame:
 					{
+						string json = bytes.GetStringUTF8();
 						if (!ColorConquerCenter.UserRoomDic.ContainsKey(user)) break;
 						var room = ColorConquerCenter.UserRoomDic[user];
 						try

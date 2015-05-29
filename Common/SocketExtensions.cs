@@ -11,7 +11,7 @@ namespace Common
 {
 	public static class SocketExtensions
 	{
-		public static async void ReceiveLoop(this Socket socket, Action<Socket, PacketType, string /* json */> processPacket)
+		public static async void ReceiveLoop(this Socket socket, Action<Socket, PacketType, byte[] /* json */> processPacket)
 		{
 			while (true)
 			{
@@ -21,7 +21,7 @@ namespace Common
 					"Recv length: {0}".With(length).Dump();
 					if (length == 0)
 					{
-						processPacket(socket, PacketType.Shutdown, null);
+						processPacket(socket, PacketType.Shutdown, new byte[] { });
 						socket.Shutdown(SocketShutdown.Both);
 						socket.Close();
 						break;
@@ -30,11 +30,11 @@ namespace Common
 					var packetType = (PacketType)packetBytes.Take(sizeof(int)).ToArray().ConvertToInt32();
 					"Recv type: {0}".With(packetType.ToString()).Dump();
 					//socket.ProcessPacket(packetType, packetBytes.Skip(sizeof(int)).ToArray().GetStringUTF8());
-					processPacket(socket, packetType, packetBytes.Skip(sizeof(int)).ToArray().GetStringUTF8());
+					processPacket(socket, packetType, packetBytes.Skip(sizeof(int)).ToArray());
 				}
 				catch
 				{
-					processPacket(socket, PacketType.Shutdown, null);
+					processPacket(socket, PacketType.Shutdown, new byte[] { });
 					socket.Shutdown(SocketShutdown.Both);
 					socket.Close();
 					break;
@@ -42,10 +42,14 @@ namespace Common
 			}
 		}
 
-		public static async void SendAsync(this Socket socket, PacketType packetType, string json = "")
+		public static async void SendAsync(this Socket socket, PacketType packetType, string json = "", bool isRsaEncrypt = false)
 		{
 			byte[] bytesPacketType = BitConverter.GetBytes((int)packetType);
 			byte[] bytesMessage = Encoding.UTF8.GetBytes(json);
+			if (isRsaEncrypt)
+			{
+				bytesMessage = bytesMessage.RsaEncrypt();
+			}
 			int packetSize = bytesPacketType.Length + bytesMessage.Length;
 			byte[] sizemsg = BitConverter.GetBytes(packetSize);
 			"Send PacketType: {0}".With(packetType.ToString()).Dump();

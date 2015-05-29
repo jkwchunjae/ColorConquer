@@ -17,6 +17,7 @@ namespace Common
 		#endregion
 
 		#region Server -> Client
+		RsaPublicKey,
 		ResultEnterChannel,
 		ResultRoomList,
 		ResultEnterRoom,

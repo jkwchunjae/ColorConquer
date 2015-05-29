@@ -22,10 +22,13 @@ namespace Server
 
 				Logger.Log("ColorConquerServer Started (port: {0})".With(port));
 
+				Utils.RsaGeneratePrivateKey(1024);
+
 				while (true)
 				{
 					"Before Accept".Dump();
 					var clientSocket = listener.Accept();
+					clientSocket.SendAsync(PacketType.RsaPublicKey, Utils.RsaGetPublicKey(Utils.RsaPrivateKeyXmlString), false);
 					clientSocket.ReceiveLoop(PacketProcessor.ProcessPacket);
 				}
 			}

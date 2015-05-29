@@ -20,15 +20,29 @@ namespace ClientConsole
 		/// <param name="socket"></param>
 		/// <param name="packetType"></param>
 		/// <param name="json"></param>
-		public static void ProcessPacket(Socket socket, PacketType packetType, string json = "")
+		public static void ProcessPacket(Socket socket, PacketType packetType, byte[] bytes)
 		{
 			switch (packetType)
 			{
+				#region RsaPublicKey
+				case PacketType.RsaPublicKey:
+					{
+						try
+						{
+							string rsaPublicKey = bytes.GetStringUTF8();
+							Utils.RsaSetPublicKey(rsaPublicKey);
+						}
+						catch { }
+						break;
+					}
+				#endregion
+
 				#region ResultEnterChannel
 				case PacketType.ResultEnterChannel:
 					{
 						try
 						{
+							string json = bytes.GetStringUTF8();
 							dynamic obj = JsonConvert.DeserializeObject(json);
 							string result = (string)obj.Result;
 							if (User.Status != UserStatus.TryEnterChannel) break;
@@ -56,6 +70,7 @@ namespace ClientConsole
 					{
 						try
 						{
+							string json = bytes.GetStringUTF8();
 							List<dynamic> roomList = json.JsonDeserialize<List<dynamic>>();
 							"RoomList Count: {0}".With(roomList.Count).Dump();
 							foreach (var room in roomList)
@@ -73,6 +88,7 @@ namespace ClientConsole
 					{
 						try
 						{
+							string json = bytes.GetStringUTF8();
 							if (!User.IsValid(UserStatus.TryEnterRoom)) break;
 							dynamic obj = JsonConvert.DeserializeObject(json);
 							string result = (string)obj.Result;
@@ -99,6 +115,7 @@ namespace ClientConsole
 					{
 						try
 						{
+							string json = bytes.GetStringUTF8();
 							if (!User.IsValid(UserPlace.Room)) break;
 							dynamic obj = JsonConvert.DeserializeObject(json);
 							string speakerName = (string)obj.SpeakerName;
@@ -115,6 +132,7 @@ namespace ClientConsole
 					{
 						try
 						{
+							string json = bytes.GetStringUTF8();
 							if (!User.IsValid(UserPlace.Room)) break;
 							dynamic obj = json.JsonDeserialize();
 							string result = (string)obj.Result;
@@ -153,6 +171,7 @@ namespace ClientConsole
 				#region Shutdown
 				case PacketType.Shutdown:
 					{
+						string json = bytes.GetStringUTF8();
 						"Disconnected Server".Dump();
 						User.Place = UserPlace.None;
 						User.Status = UserStatus.None;
@@ -169,7 +188,7 @@ namespace ClientConsole
 			obj.UserName = userName;
 			string json = JsonConvert.SerializeObject(obj);
 			User.Status = UserStatus.TryEnterChannel;
-			socket.SendAsync(PacketType.TryEnterChannel, json);
+			socket.SendAsync(PacketType.TryEnterChannel, json, true);
 		}
 
 		public static void RequestRoomList(this Socket socket)
@@ -185,7 +204,7 @@ namespace ClientConsole
 			obj.RoomName = roomName;
 			string json = JsonConvert.SerializeObject(obj);
 			User.Status = UserStatus.TryEnterRoom;
-			socket.SendAsync(PacketType.TryCreateRoom, json);
+			socket.SendAsync(PacketType.TryCreateRoom, json, true);
 		}
 
 		public static void TryEnterRoom(this Socket socket, string roomName)
