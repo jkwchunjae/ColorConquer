@@ -25,7 +25,16 @@ namespace Server
 
 		public static void SendAsync(this User user, PacketType packetType, string json)
 		{
-			user.Socket.SendAsync(packetType, json);
+			if (user.Socket != null)
+			{
+				user.Socket.SendAsync(packetType, json);
+			}
+			else if (user.Context != null)
+			{
+				json = @"{ ""packetType"":""{packetType}"", ""data"":{json} }".WithVar(new { packetType, json });
+				json.Dump();
+				user.Context.Send(json);
+			}
 		}
 	}
 }

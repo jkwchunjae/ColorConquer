@@ -8,6 +8,7 @@ using System.Dynamic;
 using Common;
 using Extensions;
 using Newtonsoft.Json;
+using Alchemy.Classes;
 
 namespace Server
 {
@@ -17,6 +18,21 @@ namespace Server
 		{
 			var user = socket.GetUser();
 			if (user == null) return;
+			user.ProcessPacket(packetType, bytes.GetStringUTF8());
+		}
+
+		public static void ProcessPacket(this User user, string json)
+		{
+			var obj = json.JsonDeserialize();
+			PacketType packetType;
+			if (Enum.TryParse<PacketType>((string)obj.packetType, out packetType))
+			{
+				user.ProcessPacket(packetType, json);
+			}
+		}
+
+		public static void ProcessPacket(this User user, PacketType packetType, string json = "")
+		{
 			switch (packetType)
 			{
 				#region TryEnterChannel
@@ -24,7 +40,6 @@ namespace Server
 					{
 						try
 						{
-							string json = bytes.RsaDecrypt().GetStringUTF8();
 							var result = ColorConquerCenter.EnterChannel(user);
 							var obj = json.JsonDeserialize();
 							user.UserName = (string)obj.UserName;
@@ -55,7 +70,6 @@ namespace Server
 					{
 						try
 						{
-							string json = bytes.RsaDecrypt().GetStringUTF8();
 							dynamic obj = json.JsonDeserialize();
 							var roomName = (string)obj.RoomName;
 							var result = ColorConquerCenter.CreateRoom(user, roomName);
@@ -74,7 +88,6 @@ namespace Server
 					{
 						try
 						{
-							string json = bytes.GetStringUTF8();
 							dynamic obj = json.JsonDeserialize();
 							var roomName = (string)obj.RoomName;
 							var result = ColorConquerCenter.EnterRoom(user, roomName);
@@ -91,7 +104,6 @@ namespace Server
 				#region ChatRoom
 				case PacketType.ChatRoom:
 					{
-						string json = bytes.GetStringUTF8();
 						if (!ColorConquerCenter.UserRoomDic.ContainsKey(user)) break;
 						var room = ColorConquerCenter.UserRoomDic[user];
 						try
@@ -108,7 +120,6 @@ namespace Server
 				#region TryStartGame
 				case PacketType.TryStartGame:
 					{
-						string json = bytes.GetStringUTF8();
 						if (!ColorConquerCenter.UserRoomDic.ContainsKey(user)) break;
 						var room = ColorConquerCenter.UserRoomDic[user];
 						try
@@ -135,6 +146,7 @@ namespace Server
 					}
 				#endregion
 			}
+
 		}
 
 		public static void ResultEnterChannel(this User user, bool result)

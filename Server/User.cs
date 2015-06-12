@@ -6,12 +6,14 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using Common;
+using Alchemy.Classes;
 
 namespace Server
 {
 	public class User
 	{
-		public Socket Socket;
+		public Socket Socket { get; private set; }
+		public UserContext Context { get; private set; }
 		public string UserName;
 
 		public Color CurrentColor;
@@ -19,6 +21,13 @@ namespace Server
 		public User(Socket socket)
 		{
 			Socket = socket;
+			Context = null;
+		}
+
+		public User(UserContext context)
+		{
+			Context = context;
+			Socket = null;
 		}
 
 		public void Reset(Color currentColor)
