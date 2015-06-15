@@ -25,7 +25,8 @@ namespace Server
 		public static bool EnterChannel(User user)
 		{
 			"EnterUser".Dump();
-			//user.SendRoomList(RoomList);
+			if (user.UserName == null || user.UserName == string.Empty || user.UserName == "")
+				return false;
 			return UserRoomDic.TryAdd(user, null);
 		}
 

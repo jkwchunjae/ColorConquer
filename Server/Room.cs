@@ -29,6 +29,9 @@ namespace Server
 
 		public bool CreateRoom(string roomName)
 		{
+			if (roomName == null || roomName == string.Empty || roomName == "")
+				return false;
+
 			lock (_roomNameDic)
 			{
 				if (_roomNameDic.ContainsKey(roomName)) return false;
@@ -68,6 +71,7 @@ namespace Server
 	public class Room
 	{
 		User Alice, Bob;
+		HashSet<User> Monitor = new HashSet<User>();
 		public ColorConquerGame Game;
 		public string RoomName;
 
@@ -82,7 +86,7 @@ namespace Server
 		public JObject ToJson()
 		{
 			return new JObject(
-				new JProperty("RoomName", RoomName)
+				new JProperty("roomName", RoomName)
 				);
 		}
 
@@ -91,10 +95,17 @@ namespace Server
 			return this.ToJson().ToString();
 		}
 
-		public IEnumerable<User> GetUsers()
+		public IEnumerable<User> GetUsers(bool includeMonitor = true)
 		{
 			if (Alice != null) yield return Alice;
 			if (Bob != null) yield return Bob;
+			if (includeMonitor)
+			{
+				foreach (var user in Monitor)
+				{
+					yield return user;
+				}
+			}
 		}
 
 		public bool IsEmpty { get { return (Alice == null && Bob == null); } }
@@ -103,18 +114,22 @@ namespace Server
 
 		public bool EnterUser(User user)
 		{
-			if (Alice == null)
+			lock(RoomName)
 			{
-				Alice = user;
+				if (Alice == null)
+				{
+					Alice = user;
+				}
+				else if (Bob == null)
+				{
+					Bob = user;
+				}
+				else
+				{
+					return false;
+				}
 			}
-			else if (Bob == null)
-			{
-				Bob = user;
-			}
-			else
-			{
-				return false;
-			}
+			this.BroadcastUserList();
 			ColorConquerCenter.RoomList.UpdateJsonString();
 			return true;
 		}
@@ -128,7 +143,35 @@ namespace Server
 
 			if (user == Alice) Alice = null;
 			if (user == Bob) Bob = null;
+			this.BroadcastUserList();
 			ColorConquerCenter.RoomList.UpdateJsonString();
+		}
+
+		public bool EnterMonitor(User user)
+		{
+			lock (Monitor)
+			{
+				Monitor.Add(user);
+			}
+			this.BroadcastUserList();
+			return true;
+		}
+
+		public void LeaveMonitor(User user)
+		{
+			lock (Monitor)
+			{
+				Monitor.Remove(user);
+			}
+			this.BroadcastUserList();
+		}
+
+		public void BroadcastUserList()
+		{
+			foreach (var user in this.GetUsers())
+			{
+				user.SendUserList(this.GetUsers());
+			}
 		}
 
 		public void Chat(User speaker, string message)
@@ -136,6 +179,26 @@ namespace Server
 			foreach (var user in this.GetUsers())
 			{
 				user.ChatRoom(speaker.UserName, message);
+			}
+		}
+
+		public void PlayerChat(User speaker, string message)
+		{
+			if (!this.GetUsers(false).Contains(speaker))
+				return;
+			foreach (var user in this.GetUsers(false))
+			{
+				//user.PlayerChat(speaker.UserName, message);
+			}
+		}
+
+		public void MonitorChat(User speaker, string message)
+		{
+			if (!Monitor.Contains(speaker))
+				return;
+			foreach (var user in Monitor)
+			{
+				//user.MonitorChat(speaker.UserName, message);
 			}
 		}
 

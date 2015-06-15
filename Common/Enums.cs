@@ -13,6 +13,8 @@ namespace Common
 		RequestRoomList,
 		TryCreateRoom,
 		TryEnterRoom,
+		TryEnterRoomMonitor,
+		TryLeaveRoom,
 		TryStartGame,
 		#endregion
 
@@ -21,6 +23,9 @@ namespace Common
 		ResultEnterChannel,
 		ResultRoomList,
 		ResultEnterRoom,
+		ResultEnterRoomMonitor,
+		UserList,
+		ResultLeaveRoom,
 		ResultStartGame,
 		#endregion
 
