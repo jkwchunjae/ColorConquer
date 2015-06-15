@@ -42,7 +42,7 @@ namespace Server
 			"CreateRoom: {0}".With(roomName).Dump();
 			if (user == null) return false;
 			var room = new Room(roomName);
-			if (RoomList.CreateRoom(room.RoomName))
+			if (UserRoomDic[user] == null && RoomList.CreateRoom(room.RoomName))
 			{
 				return EnterRoom(user, room.RoomName);
 			}
