@@ -152,7 +152,8 @@ namespace Server
 		public static void ResultEnterChannel(this User user, bool result)
 		{
 			dynamic obj = new ExpandoObject();
-			obj.Result = result ? "true" : "false";
+			obj.result = result ? "true" : "false";
+			obj.UserName = user.UserName;
 			string json = JsonConvert.SerializeObject(obj);
 			user.SendAsync(PacketType.ResultEnterChannel, json);
 		}
@@ -165,7 +166,7 @@ namespace Server
 		public static void ResultEnterRoom(this User user, bool result, string roomName = null)
 		{
 			dynamic obj = new ExpandoObject();
-			obj.Result = result ? "true" : "false";
+			obj.result = result ? "true" : "false";
 			if (result)
 			{
 				obj.RoomName = roomName;
@@ -186,7 +187,7 @@ namespace Server
 		public static void ResultStartGame(this Room room, bool result)
 		{
 			dynamic obj = new ExpandoObject();
-			obj.Result = result ? "true" : "false";
+			obj.result = result ? "true" : "false";
 			if (result)
 			{
 				var game = room.Game;
