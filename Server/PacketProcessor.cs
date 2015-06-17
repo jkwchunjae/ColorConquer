@@ -23,11 +23,18 @@ namespace Server
 
 		public static void ProcessPacket(this User user, string json)
 		{
-			var obj = json.JsonDeserialize();
-			PacketType packetType;
-			if (Enum.TryParse<PacketType>((string)obj.packetType, out packetType))
+			try
 			{
-				user.ProcessPacket(packetType, json);
+				var obj = json.JsonDeserialize();
+				PacketType packetType;
+				if (Enum.TryParse<PacketType>((string)obj.packetType, out packetType))
+				{
+					user.ProcessPacket(packetType, json);
+				}
+			}
+			catch
+			{
+
 			}
 		}
 
