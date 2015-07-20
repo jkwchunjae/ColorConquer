@@ -17,6 +17,7 @@ namespace Server
 		int _countColor;
 
 		Cell[,] Cells { get { return _board.Cells; } }
+		public bool IsRunning { get; private set; }
 		public User CurrentTurn { get { return _currentTurn; } }
 		public int Size { get { return _size; } }
 		public int CountColor { get { return _countColor; } }
@@ -96,6 +97,7 @@ namespace Server
 			SetUser(Alice, 0, 0);
 			SetUser(Bob, _size - 1, _size - 1);
 			Print();
+			IsRunning = true;
 			return true;
 		}
 
