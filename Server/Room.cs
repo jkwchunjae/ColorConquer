@@ -205,6 +205,8 @@ namespace Server
 		public bool StartGame(int size, int countColor)
 		{
 			if (!IsFull) return false;
+			if (Game != null && Game.IsRunning) return false;
+			if (!(size >= 5 && size <= 15 && countColor >= 3 && countColor <= 6)) return false;
 
 			Game = new ColorConquerGame(Alice, Bob, size, countColor);
 			Game.StartGame();
