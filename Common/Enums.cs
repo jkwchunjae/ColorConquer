@@ -16,6 +16,7 @@ namespace Common
 		TryEnterRoomMonitor,
 		TryLeaveRoom,
 		TryStartGame,
+		ClickCell,
 		#endregion
 
 		#region Server -> Client
@@ -27,6 +28,7 @@ namespace Common
 		UserList,
 		ResultLeaveRoom,
 		ResultStartGame,
+		ResultClickCell,
 		#endregion
 
 		#region Others

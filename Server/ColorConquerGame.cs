@@ -136,14 +136,14 @@ namespace Server
 				EdgeCells[user].Add(edge);
 		}
 
-		public void SetColor(User user, Color color, bool isFirst = false)
+		public bool SetColor(User user, Color color, bool isFirst = false)
 		{
 			lock (_currentTurn)
 			{
 				#region Cutting
-				if (_currentTurn != user) return; // 상대방의 입력은 쳐낸다.
-				if (!isFirst && Alice.CurrentColor == color) return; // 자신, 상대방 색을 누르면 쳐낸다.
-				if (!isFirst && Bob.CurrentColor == color) return;
+				if (_currentTurn != user) return false; // 상대방의 입력은 쳐낸다.
+				if (!isFirst && Alice.CurrentColor == color) return false; // 자신, 상대방 색을 누르면 쳐낸다.
+				if (!isFirst && Bob.CurrentColor == color) return false;
 				#endregion
 
 				#region BFS
@@ -181,6 +181,8 @@ namespace Server
 				#region Toggle Turn
 				_currentTurn = _currentTurn == Alice ? Bob : Alice;
 				#endregion
+
+				return true;
 			}
 		}
 

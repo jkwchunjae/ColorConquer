@@ -110,7 +110,7 @@ namespace Server
 
 		public bool IsEmpty { get { return (Alice == null && Bob == null); } }
 		public bool IsFull { get { return (Alice != null && Bob != null); } }
-		public bool IsGameRunning { get { return Game != null; } }
+		public bool IsGameRunning { get { return Game != null && Game.IsRunning; } }
 
 		public bool EnterUser(User user)
 		{
@@ -139,6 +139,13 @@ namespace Server
 			if (IsGameRunning)
 			{
 				// 게임 중간 종료에 대한 처리 필요
+				var winner = user == Bob ? Alice : Bob;
+				var loser = user == Alice ? Alice : Bob;
+				
+				// winner, loser에 대한 승패 기록
+				// 알림
+				// 게임 종료
+				Game = null; // 그냥 이렇게 null 처리하면 되겠지?
 			}
 
 			if (user == Alice) Alice = null;
@@ -205,7 +212,7 @@ namespace Server
 		public bool StartGame(int size, int countColor)
 		{
 			if (!IsFull) return false;
-			if (Game != null && Game.IsRunning) return false;
+			if (IsGameRunning) return false;
 			if (!(size >= 5 && size <= 15 && countColor >= 3 && countColor <= 6)) return false;
 
 			Game = new ColorConquerGame(Alice, Bob, size, countColor);

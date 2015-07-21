@@ -49,6 +49,7 @@ namespace Server
 						{
 							var obj = json.JsonDeserialize();
 							user.UserName = (string)obj.userName;
+							user.UserImage = (string)obj.userImage;
 							var result = ColorConquerCenter.EnterChannel(user);
 							user.ResultEnterChannel(result);
 						}
@@ -145,18 +146,42 @@ namespace Server
 					{
 						if (!ColorConquerCenter.UserRoomDic.ContainsKey(user)) break;
 						var room = ColorConquerCenter.UserRoomDic[user];
+						var result = false;
 						try
 						{
 							dynamic obj = json.JsonDeserialize();
 							int size = ((string)obj.size).ToInt();
 							int countColor = ((string)obj.countColor).ToInt();
-							var result = room.StartGame(size, countColor);
-							room.ResultStartGame(result);
+							result = room.StartGame(size, countColor);
 						}
-						catch
+						catch (Exception ex)
 						{
-							room.ResultStartGame(false);
+							Logger.Log(ex);
+							result = false;
 						}
+						room.ResultStartGame(result);
+						break;
+					}
+				#endregion
+
+				#region ClickCell
+				case PacketType.ClickCell:
+					{
+						if (!ColorConquerCenter.UserRoomDic.ContainsKey(user)) break;
+						var room = ColorConquerCenter.UserRoomDic[user];
+						var result = false;
+						try
+						{
+							dynamic obj = json.JsonDeserialize();
+							var color = (Color)Enum.Parse(typeof(Color), ((string)obj.color).ToUpper());
+							result = room.Game.SetColor(user, color);
+						}
+						catch (Exception ex)
+						{
+							Logger.Log(ex);
+							result = false;
+						}
+						room.ResultClickCell(user, result);
 						break;
 					}
 				#endregion
@@ -210,7 +235,7 @@ namespace Server
 		public static void SendUserList(this User user, IEnumerable<User> userList)
 		{
 			dynamic obj = new ExpandoObject();
-			obj = userList.Select(e => new { userName = e.UserName }).ToArray();
+			obj = userList.Select(e => new { userName = e.UserName, userImage = e.UserImage }).ToArray();
 			string json = JsonConvert.SerializeObject(obj);
 			user.SendAsync(PacketType.UserList, json);
 		}
@@ -244,6 +269,36 @@ namespace Server
 			foreach (var user in room.GetUsers())
 			{
 				user.SendAsync(PacketType.ResultStartGame, json);
+			}
+		}
+
+		public static void ResultClickCell(this Room room, User clickUser, bool result)
+		{
+			dynamic obj = new ExpandoObject();
+			obj.result = result.ToString().ToLower();
+			if (result)
+			{
+				var game = room.Game;
+				obj.size = game.Size;
+				obj.countColor = game.CountColor;
+				obj.currentTurnName = game.CurrentTurn.UserName;
+				obj.aliceName = game.Alice.UserName;
+				obj.bobName = game.Bob.UserName;
+				obj.aliceColor = game.Alice.CurrentColor.ToString();
+				obj.bobColor = game.Bob.CurrentColor.ToString();
+				obj.cellsColor = game.CellsColor;
+			}
+			string json = JsonConvert.SerializeObject(obj);
+			if (result)
+			{
+				foreach (var user in room.GetUsers())
+				{
+					user.SendAsync(PacketType.ResultClickCell, json);
+				}
+			}
+			else
+			{
+				clickUser.SendAsync(PacketType.ResultClickCell, json);
 			}
 		}
 	}

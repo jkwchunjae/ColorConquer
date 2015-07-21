@@ -15,6 +15,7 @@ namespace Server
 		public Socket Socket { get; private set; }
 		public UserContext Context { get; private set; }
 		public string UserName;
+		public string UserImage;
 
 		public Color CurrentColor;
 
