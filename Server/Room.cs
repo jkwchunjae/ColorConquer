@@ -95,6 +95,10 @@ namespace Server
 			return this.ToJson().ToString();
 		}
 
+		public bool IsEmpty { get { return (Alice == null && Bob == null); } }
+		public bool IsFull { get { return (Alice != null && Bob != null); } }
+		public bool IsGameRunning { get { return Game != null && Game.IsRunning; } }
+
 		public IEnumerable<User> GetUsers(bool includeMonitor = true)
 		{
 			if (Alice != null) yield return Alice;
@@ -108,10 +112,15 @@ namespace Server
 			}
 		}
 
-		public bool IsEmpty { get { return (Alice == null && Bob == null); } }
-		public bool IsFull { get { return (Alice != null && Bob != null); } }
-		public bool IsGameRunning { get { return Game != null && Game.IsRunning; } }
+		public void BroadcastUserList()
+		{
+			foreach (var user in this.GetUsers())
+			{
+				user.SendUserList(this.GetUsers());
+			}
+		}
 
+		#region Enter/Leave User, Monitor
 		public bool EnterUser(User user)
 		{
 			lock(RoomName)
@@ -141,11 +150,7 @@ namespace Server
 				// 게임 중간 종료에 대한 처리 필요
 				var winner = user == Bob ? Alice : Bob;
 				var loser = user == Alice ? Alice : Bob;
-				
-				// winner, loser에 대한 승패 기록
-				// 알림
-				// 게임 종료
-				Game = null; // 그냥 이렇게 null 처리하면 되겠지?
+				OnFinish(winner, loser);
 			}
 
 			if (user == Alice) Alice = null;
@@ -172,15 +177,29 @@ namespace Server
 			}
 			this.BroadcastUserList();
 		}
+		#endregion
 
-		public void BroadcastUserList()
+		public void OnFinish(User winner, User loser)
 		{
-			foreach (var user in this.GetUsers())
-			{
-				user.SendUserList(this.GetUsers());
-			}
+			// winner, loser에 대한 승패 기록
+			// 알림
+			// 게임 종료
+
+			// 여기서 게임 끝났는지 검사하면 안된다.
+			// 중간에 유저가 나가서 끝나는 경우도 있으니까..
+			// if (!Game.IsFinished) return;
+
+			#region DB
+			#endregion
+
+			#region Broadcast message
+			this.ResultGameFinish();
+			#endregion
+
+			Game = null;
 		}
 
+		#region Chatting
 		public void Chat(User speaker, string message)
 		{
 			foreach (var user in this.GetUsers())
@@ -208,12 +227,14 @@ namespace Server
 				//user.MonitorChat(speaker.UserName, message);
 			}
 		}
+		#endregion
 
 		public bool StartGame(int size, int countColor)
 		{
 			if (!IsFull) return false;
 			if (IsGameRunning) return false;
 			if (!(size >= 5 && size <= 15 && countColor >= 3 && countColor <= 6)) return false;
+			if (size % 2 == 0) return false;
 
 			Game = new ColorConquerGame(Alice, Bob, size, countColor);
 			Game.StartGame();

@@ -21,6 +21,14 @@ namespace Server
 		public User CurrentTurn { get { return _currentTurn; } }
 		public int Size { get { return _size; } }
 		public int CountColor { get { return _countColor; } }
+
+		// 내가 가지고 있는 셀들
+		Dictionary<User, HashSet<Cell>> MyCells;
+		// 나와 인접해 있는 셀들
+		Dictionary<User, HashSet<Cell>> EdgeCells;
+
+		Dictionary<User, List<Color>> SelectedColor;
+
 		public List<string> CellsColor
 		{
 			get
@@ -37,8 +45,14 @@ namespace Server
 			}
 		}
 
-		Dictionary<User, HashSet<Cell>> MyCells;
-		Dictionary<User, HashSet<Cell>> EdgeCells;
+		public bool IsFinished
+		{ get { return _size * _size == MyCells.Values.Sum(t => t.Count()); } }
+
+		private User Winner
+		{ get { return MyCells[Alice].Count > MyCells[Bob].Count ? Alice : Bob; } }
+
+		private User Loser
+		{ get { return MyCells[Alice].Count < MyCells[Bob].Count ? Alice : Bob; } }
 
 		static int[] dx = new int[] { 1, 0, -1, 0 };
 		static int[] dy = new int[] { 0, 1, 0, -1 };
@@ -85,6 +99,12 @@ namespace Server
 #endif
 		}
 		#endregion
+
+		public int GetUserScore(User user)
+		{
+			if (!MyCells.ContainsKey(user)) return 0;
+			return MyCells[user].Count;
+		}
 
 		public bool StartGame()
 		{
@@ -204,6 +224,7 @@ namespace Server
 		public Board(int size, int countColor = 6)
 		{
 			_size = size;
+			#region 초기화
 			Cells = new Cell[size, size];
 			for (var row = 0; row < size; row++)
 			{
@@ -212,6 +233,7 @@ namespace Server
 					Cells[row, col] = new Cell(row, col);
 				}
 			}
+			#endregion
 
 			#region 대칭으로 색칠
 			var Colors = Enum.GetValues(typeof(Color));
@@ -256,5 +278,5 @@ namespace Server
 			Color = Color.A;
 		}
 	}
-#endregion
+	#endregion
 }

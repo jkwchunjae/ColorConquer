@@ -29,6 +29,7 @@ namespace Common
 		ResultLeaveRoom,
 		ResultStartGame,
 		ResultClickCell,
+		GameFinished,
 		#endregion
 
 		#region Others

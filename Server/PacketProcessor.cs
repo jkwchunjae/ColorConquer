@@ -182,6 +182,10 @@ namespace Server
 							result = false;
 						}
 						room.ResultClickCell(user, result);
+						if (room.Game.IsFinished)
+						{
+							room.OnFinish(room.Game.Winner, room.Game.Loser);
+						}
 						break;
 					}
 				#endregion
@@ -197,6 +201,21 @@ namespace Server
 
 		}
 
+		#region Broadcasting
+		static void BroadcastMessage(this Room room, PacketType packetType, string json, bool includeMonitor = true)
+		{
+			foreach (var user in room.GetUsers(includeMonitor))
+			{
+				lock (user)
+				{
+					if (user == null) continue;
+					user.SendAsync(packetType, json);
+				}
+			}
+		}
+		#endregion
+
+		#region ResultEnterChannel
 		public static void ResultEnterChannel(this User user, bool result)
 		{
 			dynamic obj = new ExpandoObject();
@@ -205,12 +224,14 @@ namespace Server
 			string json = JsonConvert.SerializeObject(obj);
 			user.SendAsync(PacketType.ResultEnterChannel, json);
 		}
-
+		#endregion
+		#region ResultRoomList
 		public static void ResultRoomList(this User user)
 		{
 			user.SendAsync(PacketType.ResultRoomList, ColorConquerCenter.RoomList.JsonString);
 		}
-
+		#endregion
+		#region ResultEnterRoom
 		public static void ResultEnterRoom(this User user, bool result, string roomName = null)
 		{
 			dynamic obj = new ExpandoObject();
@@ -222,7 +243,8 @@ namespace Server
 			string json = JsonConvert.SerializeObject(obj);
 			user.SendAsync(PacketType.ResultEnterRoom, json);
 		}
-
+		#endregion
+		#region ResultLeaveRoom
 		public static void ResultLeaveRoom(this User user, bool result)
 		{
 			dynamic obj = new ExpandoObject();
@@ -231,7 +253,8 @@ namespace Server
 			string json = JsonConvert.SerializeObject(obj);
 			user.SendAsync(PacketType.ResultLeaveRoom, json);
 		}
-
+		#endregion
+		#region SendUserList
 		public static void SendUserList(this User user, IEnumerable<User> userList)
 		{
 			dynamic obj = new ExpandoObject();
@@ -239,7 +262,8 @@ namespace Server
 			string json = JsonConvert.SerializeObject(obj);
 			user.SendAsync(PacketType.UserList, json);
 		}
-
+		#endregion
+		#region ChatRoom
 		public static void ChatRoom(this User user, string speakerName, string message)
 		{
 			dynamic obj = new ExpandoObject();
@@ -248,7 +272,8 @@ namespace Server
 			string json = JsonConvert.SerializeObject(obj);
 			user.SendAsync(PacketType.ChatRoom, json);
 		}
-
+		#endregion
+		#region ResultStartGame
 		public static void ResultStartGame(this Room room, bool result)
 		{
 			dynamic obj = new ExpandoObject();
@@ -271,7 +296,8 @@ namespace Server
 				user.SendAsync(PacketType.ResultStartGame, json);
 			}
 		}
-
+		#endregion
+		#region ResultClickCell
 		public static void ResultClickCell(this Room room, User clickUser, bool result)
 		{
 			dynamic obj = new ExpandoObject();
@@ -291,15 +317,25 @@ namespace Server
 			string json = JsonConvert.SerializeObject(obj);
 			if (result)
 			{
-				foreach (var user in room.GetUsers())
-				{
-					user.SendAsync(PacketType.ResultClickCell, json);
-				}
+				room.BroadcastMessage(PacketType.ResultClickCell, json);
 			}
 			else
 			{
 				clickUser.SendAsync(PacketType.ResultClickCell, json);
 			}
 		}
+		#endregion
+		#region ResultGameFinish
+		public static void ResultGameFinish(this Room room, User winner, User loser)
+		{
+			dynamic obj = new ExpandoObject();
+			obj.winnerName = winner.UserName;
+			obj.loserName = loser.UserName;
+			obj.winnerScore = room.Game.GetUserScore(winner);
+			obj.loserScore = room.Game.GetUserScore(loser);
+			string json = JsonConvert.SerializeObject(obj);
+			room.BroadcastMessage(PacketType.GameFinished, json);
+		}
+		#endregion
 	}
 }
