@@ -75,6 +75,28 @@ namespace Server
 			return false;
 		}
 
+		public static bool EnterRoomMonitor(User user, string roomName)
+		{
+			"EnterRoomMonitor".Dump();
+			if (user == null || roomName == null || roomName.Length == 0) return false;
+
+			if (UserRoomDic[user] != null) return false;
+
+			var room = RoomList.Find(roomName);
+			if (room == null) return false;
+
+			lock (room)
+			{
+				if (room.EnterMonitor(user))
+				{
+					UserRoomDic[user] = room;
+					"EnterRoomMonitor Success".Dump();
+					return true;
+				}
+			}
+			return false;
+		}
+
 		public static bool LeaveRoom(User user)
 		{
 			"LeaveRoom".Dump();
@@ -86,6 +108,7 @@ namespace Server
 			lock (room)
 			{
 				room.LeaveUser(user);
+				room.LeaveMonitor(user);
 				//int tmp;
 				//if (room.IsEmpty) RoomList.TryRemove(room, out tmp);
 				if (room.IsEmpty)

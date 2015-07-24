@@ -9,65 +9,6 @@ using Newtonsoft.Json.Linq;
 
 namespace Server
 {
-	public class RoomList: List<Room>
-	{
-		Dictionary<string, Room> _roomNameDic = new Dictionary<string, Room>();
-		string _jsonString;
-		public string JsonString { get { return _jsonString; } }
-
-		public RoomList()
-		{
-			this.UpdateJsonString(false);
-		}
-
-		public string UpdateJsonString(bool isBroadcast = true)
-		{
-			_jsonString = JsonConvert.SerializeObject(this.Select(e => e.ToJson()));
-			if (isBroadcast) ColorConquerCenter.BroadcastRoomList();
-			return _jsonString;
-		}
-
-		public bool CreateRoom(string roomName)
-		{
-			if (roomName == null || roomName == string.Empty || roomName == "")
-				return false;
-
-			lock (_roomNameDic)
-			{
-				if (_roomNameDic.ContainsKey(roomName)) return false;
-				var room = new Room(roomName);
-				_roomNameDic.Add(roomName, room);
-				this.Add(room);
-			}
-			this.UpdateJsonString();
-			return true;
-		}
-
-		public void DeleteRoom(string roomName)
-		{
-			lock(_roomNameDic)
-			{
-				if (_roomNameDic.ContainsKey(roomName))
-				{
-					var room  = _roomNameDic[roomName];
-					_roomNameDic.Remove(roomName);
-					this.Remove(room);
-				}
-			}
-			this.UpdateJsonString();
-		}
-
-		public Room Find(string roomName)
-		{
-			lock (_roomNameDic)
-			{
-				if (_roomNameDic.ContainsKey(roomName))
-					return _roomNameDic[roomName];
-				return null;
-			}
-		}
-	}
-
 	public class Room
 	{
 		User Alice, Bob;
@@ -105,19 +46,24 @@ namespace Server
 			if (Bob != null) yield return Bob;
 			if (includeMonitor)
 			{
-				foreach (var user in Monitor)
+				lock (Monitor)
 				{
-					yield return user;
+					foreach (var user in Monitor)
+					{
+						yield return user;
+					}
 				}
 			}
 		}
 
-		public void BroadcastUserList()
+		public bool IsAlice(User user)
 		{
-			foreach (var user in this.GetUsers())
-			{
-				user.SendUserList(this.GetUsers());
-			}
+			return Alice == user;
+		}
+
+		public bool IsBob(User user)
+		{
+			return Bob == user;
 		}
 
 		#region Enter/Leave User, Monitor
@@ -138,14 +84,14 @@ namespace Server
 					return false;
 				}
 			}
-			this.BroadcastUserList();
+			this.SendUserList();
 			ColorConquerCenter.RoomList.UpdateJsonString();
 			return true;
 		}
 
 		public void LeaveUser(User user)
 		{
-			if (IsGameRunning)
+			if (IsGameRunning && (user == Alice || user == Bob))
 			{
 				// 게임 중간 종료에 대한 처리 필요
 				var winner = user == Bob ? Alice : Bob;
@@ -155,7 +101,7 @@ namespace Server
 
 			if (user == Alice) Alice = null;
 			if (user == Bob) Bob = null;
-			this.BroadcastUserList();
+			this.SendUserList();
 			ColorConquerCenter.RoomList.UpdateJsonString();
 		}
 
@@ -165,7 +111,11 @@ namespace Server
 			{
 				Monitor.Add(user);
 			}
-			this.BroadcastUserList();
+			this.SendUserList();
+			if (IsGameRunning)
+			{
+				this.SendGameStatus(user);
+			}
 			return true;
 		}
 
@@ -175,7 +125,7 @@ namespace Server
 			{
 				Monitor.Remove(user);
 			}
-			this.BroadcastUserList();
+			this.SendUserList();
 		}
 		#endregion
 
@@ -193,10 +143,13 @@ namespace Server
 			#endregion
 
 			#region Broadcast message
-			this.ResultGameFinish();
+			this.ResultGameFinish(winner, loser);
+			Alice = new User(loser);
+			Bob = new User(winner);
 			#endregion
 
 			Game = null;
+			this.SendUserList();
 		}
 
 		#region Chatting
@@ -229,18 +182,87 @@ namespace Server
 		}
 		#endregion
 
-		public bool StartGame(int size, int countColor)
+		public bool StartGame(User user, int size, int countColor)
 		{
-			if (!IsFull) return false;
-			if (IsGameRunning) return false;
-			if (!(size >= 5 && size <= 15 && countColor >= 3 && countColor <= 6)) return false;
-			if (size % 2 == 0) return false;
+			if (!IsFull) throw new GameStartException("방이 꽉차지 않았습니다.");
+			if (user != Alice) throw new GameStartException("게임 시작은 패배자만 할 수 있습니다.");
+			if (IsGameRunning) throw new GameStartException("현재 게임이 진행중입니다.");
+			if (!(size >= 5 && size <= 15)) throw new GameStartException("크기가 적절하지 않습니다.");
+			if (size % 2 == 0) throw new GameStartException("크기는 홀수여야 합니다.");
+			if (!(countColor >= 3 && countColor <= 6)) throw new GameStartException("색상수가 적절하지 않습니다.");
 
 			Game = new ColorConquerGame(Alice, Bob, size, countColor);
 			Game.StartGame();
 			ColorConquerCenter.RoomList.UpdateJsonString();
 
 			return true;
+		}
+	}
+
+	public class GameStartException : Exception
+	{
+		public GameStartException(string message)
+			: base(message)
+		{
+		}
+	}
+
+	public class RoomList : List<Room>
+	{
+		Dictionary<string, Room> _roomNameDic = new Dictionary<string, Room>();
+		string _jsonString;
+		public string JsonString { get { return _jsonString; } }
+
+		public RoomList()
+		{
+			this.UpdateJsonString(false);
+		}
+
+		public string UpdateJsonString(bool isBroadcast = true)
+		{
+			_jsonString = JsonConvert.SerializeObject(this.Select(e => e.ToJson()));
+			if (isBroadcast) ColorConquerCenter.BroadcastRoomList();
+			return _jsonString;
+		}
+
+		public bool CreateRoom(string roomName)
+		{
+			if (roomName == null || roomName == string.Empty || roomName == "")
+				return false;
+
+			lock (_roomNameDic)
+			{
+				if (_roomNameDic.ContainsKey(roomName)) return false;
+				var room = new Room(roomName);
+				_roomNameDic.Add(roomName, room);
+				this.Add(room);
+			}
+			this.UpdateJsonString();
+			return true;
+		}
+
+		public void DeleteRoom(string roomName)
+		{
+			lock (_roomNameDic)
+			{
+				if (_roomNameDic.ContainsKey(roomName))
+				{
+					var room = _roomNameDic[roomName];
+					_roomNameDic.Remove(roomName);
+					this.Remove(room);
+				}
+			}
+			this.UpdateJsonString();
+		}
+
+		public Room Find(string roomName)
+		{
+			lock (_roomNameDic)
+			{
+				if (_roomNameDic.ContainsKey(roomName))
+					return _roomNameDic[roomName];
+				return null;
+			}
 		}
 	}
 }

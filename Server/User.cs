@@ -19,6 +19,14 @@ namespace Server
 
 		public Color CurrentColor;
 
+		public User(User user)
+		{
+			Socket = user.Socket;
+			Context = user.Context;
+			UserName = user.UserName;
+			UserImage = user.UserImage;
+		}
+
 		public User(Socket socket)
 		{
 			Socket = socket;

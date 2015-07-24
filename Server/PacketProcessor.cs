@@ -109,6 +109,25 @@ namespace Server
 					}
 				#endregion
 
+				#region TryEnterRoomMonitor
+				case PacketType.TryEnterRoomMonitor:
+					{
+						try
+						{
+							dynamic obj = json.JsonDeserialize();
+							var roomName = (string)obj.roomName;
+							var result = ColorConquerCenter.EnterRoomMonitor(user, roomName);
+							user.ResultEnterRoomMonitor(result, roomName);
+						}
+						catch (Exception ex)
+						{
+							Logger.Log(ex);
+							user.ResultEnterRoomMonitor(false);
+						}
+						break;
+					}
+				#endregion
+
 				#region TryLeaveRoom
 				case PacketType.TryLeaveRoom:
 					{
@@ -147,19 +166,27 @@ namespace Server
 						if (!ColorConquerCenter.UserRoomDic.ContainsKey(user)) break;
 						var room = ColorConquerCenter.UserRoomDic[user];
 						var result = false;
+						string failMessage = null;
 						try
 						{
 							dynamic obj = json.JsonDeserialize();
 							int size = ((string)obj.size).ToInt();
 							int countColor = ((string)obj.countColor).ToInt();
-							result = room.StartGame(size, countColor);
+							result = room.StartGame(user, size, countColor);
+						}
+						catch (GameStartException ex)
+						{
+							Logger.Log(ex);
+							result = false;
+							failMessage = ex.Message;
 						}
 						catch (Exception ex)
 						{
 							Logger.Log(ex);
 							result = false;
+							failMessage = "알 수 없는 에러입니다.";
 						}
-						room.ResultStartGame(result);
+						room.ResultStartGame(result, failMessage);
 						break;
 					}
 				#endregion
@@ -244,6 +271,19 @@ namespace Server
 			user.SendAsync(PacketType.ResultEnterRoom, json);
 		}
 		#endregion
+		#region ResultEnterRoomMonitor
+		public static void ResultEnterRoomMonitor(this User user, bool result, string roomName = null)
+		{
+			dynamic obj = new ExpandoObject();
+			obj.result = result.ToString().ToLower();
+			if (result)
+			{
+				obj.roomName = roomName;
+			}
+			string json = JsonConvert.SerializeObject(obj);
+			user.SendAsync(PacketType.ResultEnterRoomMonitor, json);
+		}
+		#endregion
 		#region ResultLeaveRoom
 		public static void ResultLeaveRoom(this User user, bool result)
 		{
@@ -255,12 +295,12 @@ namespace Server
 		}
 		#endregion
 		#region SendUserList
-		public static void SendUserList(this User user, IEnumerable<User> userList)
+		public static void SendUserList(this Room room)
 		{
 			dynamic obj = new ExpandoObject();
-			obj = userList.Select(e => new { userName = e.UserName, userImage = e.UserImage }).ToArray();
+			obj = room.GetUsers().Select(e => new { userName = e.UserName, userImage = e.UserImage, userType = (room.IsAlice(e) ? "Alice" : (room.IsBob(e) ? "Bob" : "Monitor")) }).ToArray();
 			string json = JsonConvert.SerializeObject(obj);
-			user.SendAsync(PacketType.UserList, json);
+			room.BroadcastMessage(PacketType.UserList, json);
 		}
 		#endregion
 		#region ChatRoom
@@ -274,7 +314,7 @@ namespace Server
 		}
 		#endregion
 		#region ResultStartGame
-		public static void ResultStartGame(this Room room, bool result)
+		public static void ResultStartGame(this Room room, bool result, string failMessage)
 		{
 			dynamic obj = new ExpandoObject();
 			obj.result = result.ToString().ToLower();
@@ -289,6 +329,10 @@ namespace Server
 				obj.aliceColor = game.Alice.CurrentColor.ToString();
 				obj.bobColor = game.Bob.CurrentColor.ToString();
 				obj.cellsColor = game.CellsColor;
+			}
+			else
+			{
+				obj.failMessage = failMessage;
 			}
 			string json = JsonConvert.SerializeObject(obj);
 			foreach (var user in room.GetUsers())
@@ -323,6 +367,23 @@ namespace Server
 			{
 				clickUser.SendAsync(PacketType.ResultClickCell, json);
 			}
+		}
+		#endregion
+		#region SendGameStatus
+		public static void SendGameStatus(this Room room, User targetUser)
+		{
+			dynamic obj = new ExpandoObject();
+			var game = room.Game;
+			obj.size = game.Size;
+			obj.countColor = game.CountColor;
+			obj.currentTurnName = game.CurrentTurn.UserName;
+			obj.aliceName = game.Alice.UserName;
+			obj.bobName = game.Bob.UserName;
+			obj.aliceColor = game.Alice.CurrentColor.ToString();
+			obj.bobColor = game.Bob.CurrentColor.ToString();
+			obj.cellsColor = game.CellsColor;
+			string json = JsonConvert.SerializeObject(obj);
+			targetUser.SendAsync(PacketType.GameStatus, json);
 		}
 		#endregion
 		#region ResultGameFinish

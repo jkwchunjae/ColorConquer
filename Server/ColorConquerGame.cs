@@ -48,10 +48,10 @@ namespace Server
 		public bool IsFinished
 		{ get { return _size * _size == MyCells.Values.Sum(t => t.Count()); } }
 
-		private User Winner
+		public User Winner
 		{ get { return MyCells[Alice].Count > MyCells[Bob].Count ? Alice : Bob; } }
 
-		private User Loser
+		public User Loser
 		{ get { return MyCells[Alice].Count < MyCells[Bob].Count ? Alice : Bob; } }
 
 		static int[] dx = new int[] { 1, 0, -1, 0 };
@@ -112,6 +112,9 @@ namespace Server
 			_board = new Board(_size, _countColor);
 			MyCells = new Dictionary<User, HashSet<Cell>>();
 			EdgeCells = new Dictionary<User, HashSet<Cell>>();
+			SelectedColor = new Dictionary<User, List<Color>>();
+			SelectedColor.Add(Alice, new List<Color>());
+			SelectedColor.Add(Bob, new List<Color>());
 			_currentTurn = Alice;
 			Print();
 			SetUser(Alice, 0, 0);
@@ -196,6 +199,7 @@ namespace Server
 					mycell.Color = color;
 
 				user.CurrentColor = color;
+				SelectedColor[user].Add(color);
 				#endregion
 
 				#region Toggle Turn
