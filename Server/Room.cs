@@ -27,7 +27,8 @@ namespace Server
 		public JObject ToJson()
 		{
 			return new JObject(
-				new JProperty("roomName", RoomName)
+				new JProperty("roomName", RoomName),
+				new JProperty("isGameRunning", IsGameRunning.ToString().ToLower())
 				);
 		}
 
@@ -144,8 +145,15 @@ namespace Server
 
 			#region Broadcast message
 			this.ResultGameFinish(winner, loser);
-			Alice = new User(loser);
-			Bob = new User(winner);
+			#endregion
+
+			#region Reset Alice, Bob
+			if (loser == Bob)
+			{
+				var tmp = Bob;
+				Bob = Alice;
+				Alice = tmp;
+			}
 			#endregion
 
 			Game = null;
@@ -182,7 +190,7 @@ namespace Server
 		}
 		#endregion
 
-		public bool StartGame(User user, int size, int countColor)
+		public void StartGame(User user, int size, int countColor)
 		{
 			if (!IsFull) throw new GameStartException("방이 꽉차지 않았습니다.");
 			if (user != Alice) throw new GameStartException("게임 시작은 패배자만 할 수 있습니다.");
@@ -194,8 +202,6 @@ namespace Server
 			Game = new ColorConquerGame(Alice, Bob, size, countColor);
 			Game.StartGame();
 			ColorConquerCenter.RoomList.UpdateJsonString();
-
-			return true;
 		}
 	}
 

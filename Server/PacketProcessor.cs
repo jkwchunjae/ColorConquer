@@ -165,14 +165,14 @@ namespace Server
 					{
 						if (!ColorConquerCenter.UserRoomDic.ContainsKey(user)) break;
 						var room = ColorConquerCenter.UserRoomDic[user];
-						var result = false;
+						var result = true;
 						string failMessage = null;
 						try
 						{
 							dynamic obj = json.JsonDeserialize();
 							int size = ((string)obj.size).ToInt();
 							int countColor = ((string)obj.countColor).ToInt();
-							result = room.StartGame(user, size, countColor);
+							room.StartGame(user, size, countColor);
 						}
 						catch (GameStartException ex)
 						{
