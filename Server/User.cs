@@ -14,6 +14,7 @@ namespace Server
 	{
 		public Socket Socket { get; private set; }
 		public UserContext Context { get; private set; }
+		public string UserId;
 		public string UserName;
 		public string UserImage;
 

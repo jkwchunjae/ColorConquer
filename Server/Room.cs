@@ -100,8 +100,15 @@ namespace Server
 				OnFinish(winner, loser);
 			}
 
-			if (user == Alice) Alice = null;
-			if (user == Bob) Bob = null;
+			if (user == Alice)
+			{
+				Alice = Bob;
+				Bob = null;
+			}
+			else if (user == Bob)
+			{
+				Bob = null;
+			}
 			this.SendUserList();
 			ColorConquerCenter.RoomList.UpdateJsonString();
 		}
@@ -129,6 +136,13 @@ namespace Server
 			this.SendUserList();
 		}
 		#endregion
+
+		public void Giveup(User giveupUser)
+		{
+			var winner = Alice == giveupUser ? Bob : Alice;
+			var loser = Alice != giveupUser ? Bob : Alice;
+			OnFinish(winner, loser);
+		}
 
 		public void OnFinish(User winner, User loser)
 		{

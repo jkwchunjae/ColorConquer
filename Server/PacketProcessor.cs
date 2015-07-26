@@ -48,6 +48,7 @@ namespace Server
 						try
 						{
 							var obj = json.JsonDeserialize();
+							user.UserId = (string)obj.userId;
 							user.UserName = (string)obj.userName;
 							user.UserImage = (string)obj.userImage;
 							var result = ColorConquerCenter.EnterChannel(user);
@@ -60,7 +61,6 @@ namespace Server
 						break;
 					}
 				#endregion
-
 				#region RequestRoomList
 				case PacketType.RequestRoomList:
 					{
@@ -72,7 +72,6 @@ namespace Server
 						break;
 					}
 				#endregion
-
 				#region TryCreateRoom
 				case PacketType.TryCreateRoom:
 					{
@@ -90,7 +89,6 @@ namespace Server
 						break;
 					}
 				#endregion
-
 				#region TryEnterRoom
 				case PacketType.TryEnterRoom:
 					{
@@ -108,7 +106,6 @@ namespace Server
 						break;
 					}
 				#endregion
-
 				#region TryEnterRoomMonitor
 				case PacketType.TryEnterRoomMonitor:
 					{
@@ -127,7 +124,6 @@ namespace Server
 						break;
 					}
 				#endregion
-
 				#region TryLeaveRoom
 				case PacketType.TryLeaveRoom:
 					{
@@ -143,7 +139,6 @@ namespace Server
 						break;
 					}
 				#endregion
-
 				#region ChatRoom
 				case PacketType.ChatRoom:
 					{
@@ -159,7 +154,6 @@ namespace Server
 						break;
 					}
 				#endregion
-
 				#region TryStartGame
 				case PacketType.TryStartGame:
 					{
@@ -190,7 +184,16 @@ namespace Server
 						break;
 					}
 				#endregion
-
+				#region GiveupGame
+				case PacketType.GiveupGame:
+					{
+						if (!ColorConquerCenter.UserRoomDic.ContainsKey(user)) break;
+						var room = ColorConquerCenter.UserRoomDic[user];
+						if (!room.IsGameRunning) break;
+						room.Giveup(user);
+						break;
+					}
+				#endregion
 				#region ClickCell
 				case PacketType.ClickCell:
 					{
@@ -216,7 +219,6 @@ namespace Server
 						break;
 					}
 				#endregion
-
 				#region Shutdown
 				case PacketType.Shutdown:
 					{

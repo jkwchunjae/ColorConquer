@@ -16,6 +16,7 @@ namespace Common
 		TryEnterRoomMonitor,
 		TryLeaveRoom,
 		TryStartGame,
+		GiveupGame,
 		ClickCell,
 		#endregion
 
