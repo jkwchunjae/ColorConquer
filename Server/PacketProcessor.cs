@@ -199,19 +199,23 @@ namespace Server
 					{
 						if (!ColorConquerCenter.UserRoomDic.ContainsKey(user)) break;
 						var room = ColorConquerCenter.UserRoomDic[user];
-						var result = false;
 						try
 						{
 							dynamic obj = json.JsonDeserialize();
 							var color = (Color)Enum.Parse(typeof(Color), ((string)obj.color).ToUpper());
-							result = room.Game.SetColor(user, color);
+							room.Game.SetColor(user, color);
+							room.ResultClickCell(user, true, "");
+						}
+						catch (SetColorException ex)
+						{
+							Logger.Log(ex);
+							room.ResultClickCell(user, false, ex.Message);
 						}
 						catch (Exception ex)
 						{
 							Logger.Log(ex);
-							result = false;
+							room.ResultClickCell(user, false, "알 수 없는 에러입니다.");
 						}
-						room.ResultClickCell(user, result);
 						if (room.Game.IsFinished)
 						{
 							room.OnFinish(room.Game.Winner, room.Game.Loser);
@@ -316,7 +320,7 @@ namespace Server
 		}
 		#endregion
 		#region ResultStartGame
-		public static void ResultStartGame(this Room room, bool result, string failMessage)
+		public static void ResultStartGame(this Room room, bool result, string failureMessage)
 		{
 			dynamic obj = new ExpandoObject();
 			obj.result = result.ToString().ToLower();
@@ -327,14 +331,16 @@ namespace Server
 				obj.countColor = game.CountColor;
 				obj.currentTurnName = game.CurrentTurn.UserName;
 				obj.aliceName = game.Alice.UserName;
-				obj.bobName = game.Bob.UserName;
 				obj.aliceColor = game.Alice.CurrentColor.ToString();
+				obj.aliceCount = game.GetUserScore(game.Alice);
+				obj.bobName = game.Bob.UserName;
 				obj.bobColor = game.Bob.CurrentColor.ToString();
+				obj.bobCount = game.GetUserScore(game.Bob);
 				obj.cellsColor = game.CellsColor;
 			}
 			else
 			{
-				obj.failMessage = failMessage;
+				obj.failureMessage = failureMessage;
 			}
 			string json = JsonConvert.SerializeObject(obj);
 			foreach (var user in room.GetUsers())
@@ -344,7 +350,7 @@ namespace Server
 		}
 		#endregion
 		#region ResultClickCell
-		public static void ResultClickCell(this Room room, User clickUser, bool result)
+		public static void ResultClickCell(this Room room, User clickUser, bool result, string failureMessage)
 		{
 			dynamic obj = new ExpandoObject();
 			obj.result = result.ToString().ToLower();
@@ -355,10 +361,16 @@ namespace Server
 				obj.countColor = game.CountColor;
 				obj.currentTurnName = game.CurrentTurn.UserName;
 				obj.aliceName = game.Alice.UserName;
-				obj.bobName = game.Bob.UserName;
 				obj.aliceColor = game.Alice.CurrentColor.ToString();
+				obj.aliceCount = game.GetUserScore(game.Alice);
+				obj.bobName = game.Bob.UserName;
 				obj.bobColor = game.Bob.CurrentColor.ToString();
+				obj.bobCount = game.GetUserScore(game.Bob);
 				obj.cellsColor = game.CellsColor;
+			}
+			else
+			{
+				obj.failureMessage = failureMessage;
 			}
 			string json = JsonConvert.SerializeObject(obj);
 			if (result)
@@ -380,9 +392,11 @@ namespace Server
 			obj.countColor = game.CountColor;
 			obj.currentTurnName = game.CurrentTurn.UserName;
 			obj.aliceName = game.Alice.UserName;
-			obj.bobName = game.Bob.UserName;
 			obj.aliceColor = game.Alice.CurrentColor.ToString();
+			obj.aliceCount = game.GetUserScore(game.Alice);
+			obj.bobName = game.Bob.UserName;
 			obj.bobColor = game.Bob.CurrentColor.ToString();
+			obj.bobCount = game.GetUserScore(game.Bob);
 			obj.cellsColor = game.CellsColor;
 			string json = JsonConvert.SerializeObject(obj);
 			targetUser.SendAsync(PacketType.GameStatus, json);

@@ -28,6 +28,7 @@ namespace Server
 		Dictionary<User, HashSet<Cell>> EdgeCells;
 
 		Dictionary<User, List<Color>> SelectedColor;
+		HashSet<Cell> RemainCells;
 
 		public List<string> CellsColor
 		{
@@ -115,11 +116,12 @@ namespace Server
 			SelectedColor = new Dictionary<User, List<Color>>();
 			SelectedColor.Add(Alice, new List<Color>());
 			SelectedColor.Add(Bob, new List<Color>());
+			RemainCells = new HashSet<Cell>();
 			_currentTurn = Alice;
-			Print();
+			//Print();
 			SetUser(Alice, 0, 0);
 			SetUser(Bob, _size - 1, _size - 1);
-			Print();
+			//Print();
 			IsRunning = true;
 			return true;
 		}
@@ -143,6 +145,7 @@ namespace Server
 			SetColor(user, user.CurrentColor, true);
 		}
 
+		#region Set Color
 		void AddEdgeCell(User user, Cell cell)
 		{
 			if (MyCells[user].Contains(cell)) return;
@@ -159,14 +162,14 @@ namespace Server
 				EdgeCells[user].Add(edge);
 		}
 
-		public bool SetColor(User user, Color color, bool isFirst = false)
+		public void SetColor(User user, Color color, bool isFirst = false)
 		{
 			lock (_currentTurn)
 			{
 				#region Cutting
-				if (_currentTurn != user) return false; // 상대방의 입력은 쳐낸다.
-				if (!isFirst && Alice.CurrentColor == color) return false; // 자신, 상대방 색을 누르면 쳐낸다.
-				if (!isFirst && Bob.CurrentColor == color) return false;
+				if (_currentTurn != user) throw new SetColorException("차례가 아닙니다."); // 상대방의 입력은 쳐낸다.
+				if (!isFirst && Alice.CurrentColor == color) throw new SetColorException("본인, 상대방의 색은 선택할 수 없습니다."); // 자신, 상대방 색을 누르면 쳐낸다.
+				if (!isFirst && Bob.CurrentColor == color) throw new SetColorException("본인, 상대방의 색은 선택할 수 없습니다.");
 				#endregion
 
 				#region BFS
@@ -205,15 +208,20 @@ namespace Server
 				#region Toggle Turn
 				_currentTurn = _currentTurn == Alice ? Bob : Alice;
 				#endregion
-
-				return true;
 			}
 		}
+		#endregion
 
 		bool IsValid(int row, int col)
 		{
 			return _board.IsValid(row, col);
 		}
+	}
+
+	public class SetColorException : Exception
+	{
+		public SetColorException(string message) : base(message)
+		{ }
 	}
 
 	#region Class Board
