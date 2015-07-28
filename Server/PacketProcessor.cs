@@ -332,10 +332,10 @@ namespace Server
 				obj.currentTurnName = game.CurrentTurn.UserName;
 				obj.aliceName = game.Alice.UserName;
 				obj.aliceColor = game.Alice.CurrentColor.ToString();
-				obj.aliceCount = game.GetUserScore(game.Alice);
+				obj.aliceScore = game.GetUserScore(game.Alice);
 				obj.bobName = game.Bob.UserName;
 				obj.bobColor = game.Bob.CurrentColor.ToString();
-				obj.bobCount = game.GetUserScore(game.Bob);
+				obj.bobScore = game.GetUserScore(game.Bob);
 				obj.cellsColor = game.CellsColor;
 			}
 			else
@@ -362,10 +362,10 @@ namespace Server
 				obj.currentTurnName = game.CurrentTurn.UserName;
 				obj.aliceName = game.Alice.UserName;
 				obj.aliceColor = game.Alice.CurrentColor.ToString();
-				obj.aliceCount = game.GetUserScore(game.Alice);
+				obj.aliceScore = game.GetUserScore(game.Alice);
 				obj.bobName = game.Bob.UserName;
 				obj.bobColor = game.Bob.CurrentColor.ToString();
-				obj.bobCount = game.GetUserScore(game.Bob);
+				obj.bobScore = game.GetUserScore(game.Bob);
 				obj.cellsColor = game.CellsColor;
 			}
 			else
@@ -393,10 +393,10 @@ namespace Server
 			obj.currentTurnName = game.CurrentTurn.UserName;
 			obj.aliceName = game.Alice.UserName;
 			obj.aliceColor = game.Alice.CurrentColor.ToString();
-			obj.aliceCount = game.GetUserScore(game.Alice);
+			obj.aliceScore = game.GetUserScore(game.Alice);
 			obj.bobName = game.Bob.UserName;
 			obj.bobColor = game.Bob.CurrentColor.ToString();
-			obj.bobCount = game.GetUserScore(game.Bob);
+			obj.bobScore = game.GetUserScore(game.Bob);
 			obj.cellsColor = game.CellsColor;
 			string json = JsonConvert.SerializeObject(obj);
 			targetUser.SendAsync(PacketType.GameStatus, json);
