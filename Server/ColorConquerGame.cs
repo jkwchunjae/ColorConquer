@@ -54,6 +54,13 @@ namespace Server
 				if (RemainColorCount.Count() >= 3) return false; // 남은 색이 3개 이상이면 절대 끝날 수 없다.
 				// 남은 색의 개수가 1개 or 2개일 경우
 				// Alice, Bob의 색 + 남은 색의 개수가 여전히 2개이면 게임이 끝난것으로 간주한다.
+#if DEBUG
+				"RemainColorCount: ".Dump();
+				foreach (var color in RemainColorCount)
+					"{0}: {1}".With(color.Key.ToString(), color.Value).Dump();
+				"Alice's Color: {0}".With(MyCells[Alice].First().Color.ToString()).Dump();
+				"Bob's Color: {0}".With(MyCells[Bob].First().Color.ToString()).Dump();
+#endif
 				var set = new HashSet<Color>(RemainColorCount.Select(e => e.Key));
 				set.Add(MyCells[Alice].First().Color);
 				set.Add(MyCells[Bob].First().Color);
@@ -117,7 +124,7 @@ namespace Server
 		{
 			if (!MyCells.ContainsKey(user)) return 0;
 			// 경기가 끝났다고 판단되는 경우 내 색은 아니지만 상대방 진영에 있는 내 색도 계산한다.
-			var remainCount = IsFinished ? RemainColorCount[MyCells[user].First().Color] : 0;
+			var remainCount = IsFinished && RemainColorCount.ContainsKey(MyCells[user].First().Color) ? RemainColorCount[MyCells[user].First().Color] : 0;
 			return MyCells[user].Count + remainCount;
 		}
 
@@ -149,11 +156,6 @@ namespace Server
 			//Print();
 			IsRunning = true;
 			return true;
-		}
-
-		public string GetStatus()
-		{
-			return "";
 		}
 
 		void SetUser(User user, int row, int col)
