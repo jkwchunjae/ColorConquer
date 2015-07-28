@@ -209,9 +209,9 @@ namespace Server
 			if (!IsFull) throw new GameStartException("방이 꽉차지 않았습니다.");
 			if (user != Alice) throw new GameStartException("게임 시작은 패배자만 할 수 있습니다.");
 			if (IsGameRunning) throw new GameStartException("현재 게임이 진행중입니다.");
-			if (!(size >= 5 && size <= 15)) throw new GameStartException("크기가 적절하지 않습니다.");
+			if (!(size >= 7 && size <= 15)) throw new GameStartException("크기가 적절하지 않습니다. 7~15");
 			if (size % 2 == 0) throw new GameStartException("크기는 홀수여야 합니다.");
-			if (!(countColor >= 3 && countColor <= 6)) throw new GameStartException("색상수가 적절하지 않습니다.");
+			if (!(countColor >= 5 && countColor <= 6)) throw new GameStartException("색상수가 적절하지 않습니다. (5~6)");
 
 			Game = new ColorConquerGame(Alice, Bob, size, countColor);
 			Game.StartGame();
