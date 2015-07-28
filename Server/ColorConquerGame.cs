@@ -28,7 +28,7 @@ namespace Server
 		Dictionary<User, HashSet<Cell>> EdgeCells;
 
 		Dictionary<User, List<Color>> SelectedColor;
-		HashSet<Cell> RemainCells;
+		Dictionary<Color, int> RemainColorCount;
 
 		public List<string> CellsColor
 		{
@@ -47,7 +47,19 @@ namespace Server
 		}
 
 		public bool IsFinished
-		{ get { return _size * _size == MyCells.Values.Sum(t => t.Count()); } }
+		{
+			get
+			{
+				if (RemainColorCount.Count() == 0) return true; // 남은 색이 없으면 당연히 끝!
+				if (RemainColorCount.Count() >= 3) return false; // 남은 색이 3개 이상이면 절대 끝날 수 없다.
+				// 남은 색의 개수가 1개 or 2개일 경우
+				// Alice, Bob의 색 + 남은 색의 개수가 여전히 2개이면 게임이 끝난것으로 간주한다.
+				var set = new HashSet<Color>(RemainColorCount.Select(e => e.Key));
+				set.Add(MyCells[Alice].First().Color);
+				set.Add(MyCells[Bob].First().Color);
+				return set.Count() == 2;
+			}
+		}
 
 		public User Winner
 		{ get { return MyCells[Alice].Count > MyCells[Bob].Count ? Alice : Bob; } }
@@ -104,7 +116,9 @@ namespace Server
 		public int GetUserScore(User user)
 		{
 			if (!MyCells.ContainsKey(user)) return 0;
-			return MyCells[user].Count;
+			// 경기가 끝났다고 판단되는 경우 내 색은 아니지만 상대방 진영에 있는 내 색도 계산한다.
+			var remainCount = IsFinished ? RemainColorCount[MyCells[user].First().Color] : 0;
+			return MyCells[user].Count + remainCount;
 		}
 
 		public bool StartGame()
@@ -116,7 +130,18 @@ namespace Server
 			SelectedColor = new Dictionary<User, List<Color>>();
 			SelectedColor.Add(Alice, new List<Color>());
 			SelectedColor.Add(Bob, new List<Color>());
-			RemainCells = new HashSet<Cell>();
+			#region 남아있는 색 개수 세기
+			RemainColorCount = new Dictionary<Color, int>();
+			for (var row = 0; row < _size; row++)
+			{
+				for (var col = 0; col < _size; col++)
+				{
+					if (!RemainColorCount.ContainsKey(Cells[row, col].Color))
+						RemainColorCount.Add(Cells[row, col].Color, 0);
+					RemainColorCount[Cells[row, col].Color]++;
+				}
+			}
+			#endregion
 			_currentTurn = Alice;
 			//Print();
 			SetUser(Alice, 0, 0);
@@ -156,6 +181,11 @@ namespace Server
 		{
 			if (MyCells[user].Contains(cell)) return;
 			if (!EdgeCells[user].Contains(cell)) return; // EdgeCells 에 속해있지 않던 셀은 MyCell 이 될 수 없다.
+			#region 남은 색에 대한 처리
+			RemainColorCount[cell.Color]--;
+			if (RemainColorCount[cell.Color] == 0)
+				RemainColorCount.Remove(cell.Color);
+			#endregion
 			MyCells[user].Add(cell);
 			EdgeCells[user].Remove(cell);
 			foreach (var edge in _board.GetEdges(cell).Where(e => !MyCells[user].Contains(e)))
