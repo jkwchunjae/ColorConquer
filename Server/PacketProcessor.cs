@@ -165,7 +165,8 @@ namespace Server
 						{
 							dynamic obj = json.JsonDeserialize();
 							int size = ((string)obj.size).ToInt();
-							int countColor = ((string)obj.countColor).ToInt();
+							//int countColor = ((string)obj.countColor).ToInt();
+							int countColor = 6; // 그냥 6개로 하자!
 							room.StartGame(user, size, countColor);
 						}
 						catch (GameStartException ex)
