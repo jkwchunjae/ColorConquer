@@ -5,36 +5,34 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Dynamic;
-using Common;
 using Extensions;
 using Newtonsoft.Json;
-using Alchemy.Classes;
 
-namespace Server
+namespace ColorConquerServer
 {
 	public static class PacketProcessor
 	{
 		public static void ProcessPacket(Socket socket, PacketType packetType, byte[] bytes)
 		{
-			var user = socket.GetUser();
-			if (user == null) return;
-			user.ProcessPacket(packetType, bytes.GetStringUTF8());
+			//var user = socket.GetUser();
+			//if (user == null) return;
+			//user.ProcessPacket(packetType, bytes.GetStringUTF8());
 		}
 
 		public static void ProcessPacket(this User user, string json)
 		{
 			try
 			{
-				var obj = json.JsonDeserialize();
+				dynamic obj = JsonConvert.DeserializeObject(json);
 				PacketType packetType;
 				if (Enum.TryParse<PacketType>((string)obj.packetType, out packetType))
 				{
 					user.ProcessPacket(packetType, json);
 				}
 			}
-			catch
+			catch (Exception ex)
 			{
-
+				Logger.Log(ex);
 			}
 		}
 
@@ -47,7 +45,7 @@ namespace Server
 					{
 						try
 						{
-							var obj = json.JsonDeserialize();
+							dynamic obj = JsonConvert.DeserializeObject(json);
 							user.UserId = (string)obj.userId;
 							user.UserName = (string)obj.userName;
 							user.UserImage = (string)obj.userImage;
@@ -77,7 +75,7 @@ namespace Server
 					{
 						try
 						{
-							dynamic obj = json.JsonDeserialize();
+							dynamic obj = JsonConvert.DeserializeObject(json);
 							var roomName = (string)obj.roomName;
 							var result = ColorConquerCenter.CreateRoom(user, roomName);
 							user.ResultEnterRoom(result, roomName);
@@ -94,7 +92,7 @@ namespace Server
 					{
 						try
 						{
-							dynamic obj = json.JsonDeserialize();
+							dynamic obj = JsonConvert.DeserializeObject(json);
 							var roomName = (string)obj.roomName;
 							var result = ColorConquerCenter.EnterRoom(user, roomName);
 							user.ResultEnterRoom(result, roomName);
@@ -111,7 +109,7 @@ namespace Server
 					{
 						try
 						{
-							dynamic obj = json.JsonDeserialize();
+							dynamic obj = JsonConvert.DeserializeObject(json);
 							var roomName = (string)obj.roomName;
 							var result = ColorConquerCenter.EnterRoomMonitor(user, roomName);
 							user.ResultEnterRoomMonitor(result, roomName);
@@ -146,7 +144,7 @@ namespace Server
 						var room = ColorConquerCenter.UserRoomDic[user];
 						try
 						{
-							dynamic obj = json.JsonDeserialize();
+							dynamic obj = JsonConvert.DeserializeObject(json);
 							var message = (string)obj.message;
 							room.Chat(user, message);
 						}
@@ -163,7 +161,7 @@ namespace Server
 						string failMessage = null;
 						try
 						{
-							dynamic obj = json.JsonDeserialize();
+							dynamic obj = JsonConvert.DeserializeObject(json);
 							int size = ((string)obj.size).ToInt();
 							//int countColor = ((string)obj.countColor).ToInt();
 							int countColor = 6; // 그냥 6개로 하자!
@@ -202,7 +200,7 @@ namespace Server
 						var room = ColorConquerCenter.UserRoomDic[user];
 						try
 						{
-							dynamic obj = json.JsonDeserialize();
+							dynamic obj = JsonConvert.DeserializeObject(json);
 							var color = (Color)Enum.Parse(typeof(Color), ((string)obj.color).ToUpper());
 							room.Game.SetColor(user, color);
 							room.ResultClickCell(user, true, "");

@@ -5,15 +5,15 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
-using Common;
-using Alchemy.Classes;
+using Microsoft.AspNet.SignalR.Hubs;
 
-namespace Server
+namespace ColorConquerServer
 {
 	public class User
 	{
 		public Socket Socket { get; private set; }
-		public UserContext Context { get; private set; }
+		public HubCallerContext Context { get; private set; }
+		public String ConnectionId { get; private set; }
 		public string UserId;
 		public string UserName;
 		public string UserImage;
@@ -26,9 +26,10 @@ namespace Server
 			Context = null;
 		}
 
-		public User(UserContext context)
+		public User(HubCallerContext context)
 		{
 			Context = context;
+			ConnectionId = context.ConnectionId;
 			Socket = null;
 		}
 

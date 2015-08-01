@@ -1,109 +1,97 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
-using Extensions;
-using System.Net;
-using Common;
-using Alchemy;
-using Alchemy.Classes;
 using System.Collections.Concurrent;
+using Microsoft.AspNet.SignalR;
+using Microsoft.AspNet.SignalR.Hubs;
+using Microsoft.Owin.Host.HttpListener;
+using Microsoft.Owin.Hosting;
+using Owin;
+using Microsoft.Owin.Cors;
+using Extensions;
 
-namespace Server
+namespace ColorConquerServer
 {
 	public class ColorConquerServer
 	{
-		private WebSocketServer _server;
-
-		private ConcurrentDictionary<UserContext, User> _userDic = new ConcurrentDictionary<UserContext, User>();
-
-		public void StartWebSocket(int port)
+		static void Main(string[] args)
 		{
-			_server = new WebSocketServer(port, IPAddress.Any)
+			int port = 55591;
+#if DEBUG
+			string url = "http://localhost:{0}".With(port);
+			Logger.Log(url);
+#else
+			string url = "http://hellojkw.com:{0}".With(port);
+#endif
+			using (WebApp.Start(url))
 			{
-				OnReceive = OnReceive,
-				OnSend = OnSend,
-				OnConnect = OnConnect,
-				OnConnected = OnConnected,
-				OnDisconnect = OnDisconnect,
-				TimeOut = new TimeSpan(0, 5, 0)
-			};
-			_server.Start();
-			Logger.Log("Server started.");
+				Console.WriteLine("Server started.");
+				Console.ReadLine();
+			}
+		}
+	}
+
+	public class Startup
+	{
+		public void Configuration(IAppBuilder app)
+		{
+			app.UseCors(CorsOptions.AllowAll);
+			app.MapSignalR("/colorconquer", new HubConfiguration());
+		}
+	}
+
+	public class ColorConquerHub : Hub
+	{
+		private static ConcurrentDictionary<string /* ConnectionId */, User> _userDic = new ConcurrentDictionary<string, User>();
+
+		public ColorConquerHub()
+		{
+			UserStatic.colorConquerHub = this;
+		}
+		
+		public override Task OnConnected()
+		{
+			"Connected".Dump();
+			_userDic.TryAdd(Context.ConnectionId, new User(Context));
+			return base.OnConnected();
 		}
 
-		public void StopWebSocket()
+		public override Task OnReconnected()
 		{
-			_server.Stop();
-			Logger.Log("Server stoped.");
+			"Reconnected".Dump();
+			if (!_userDic.ContainsKey(Context.ConnectionId))
+			{
+				_userDic.TryAdd(Context.ConnectionId, new User(Context));
+			}
+			return base.OnReconnected();
 		}
 
-		void OnConnect(UserContext context)
+		public override Task OnDisconnected(bool stopCalled)
 		{
-			"Connect: {0}".With(context.ClientAddress.ToString()).Dump();
+			"Disconnected".Dump();
+			if (_userDic.ContainsKey(Context.ConnectionId))
+			{
+				User user = _userDic[Context.ConnectionId];
+				user.ProcessPacket(PacketType.Shutdown);
+				_userDic.TryRemove(Context.ConnectionId, out user);
+			}
+			return base.OnDisconnected(stopCalled);
 		}
 
-		void OnConnected(UserContext context)
+		public void ClientToServer(string message)
 		{
-			"Connected: {0}".With(context.ClientAddress.ToString()).Dump();
-			_userDic.TryAdd(context, new User(context));
-			//context.Send("Connected");
-		}
-
-		void OnDisconnect(UserContext context)
-		{
-			"DisConnect: {0}".With(context.ClientAddress.ToString()).Dump();
-			if (!_userDic.ContainsKey(context))
+			if (!_userDic.ContainsKey(Context.ConnectionId))
 				return;
-			User user = _userDic[context];
-			user.ProcessPacket(PacketType.Shutdown);
-			_userDic.TryRemove(context, out user);
+			User user = _userDic[Context.ConnectionId];
+			user.ProcessPacket(message);
 		}
 
-		void OnSend(UserContext context)
+		public void Send(string connectionId, string message)
 		{
-			"Send: {0}".With(context.ClientAddress.ToString()).Dump();
-		}
-
-		void OnReceive(UserContext context)
-		{
-			if (!_userDic.ContainsKey(context))
-				return;
-			User user = _userDic[context];
-			user.ProcessPacket(context.DataFrame.ToString());
-			//"Receive: {0}, {1}".With(context.ClientAddress.ToString(), context.DataFrame.ToString()).Dump();
-		}
-
-		public void Start(int port)
-		{
-			var listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-			try
-			{
-				listener.Bind(new IPEndPoint(IPAddress.Any, port));
-				listener.Listen(100);
-
-				Logger.Log("ColorConquerServer Started (port: {0})".With(port));
-
-				Utils.RsaGeneratePrivateKey(1024);
-
-				while (true)
-				{
-					"Before Accept".Dump();
-					var clientSocket = listener.Accept();
-					clientSocket.SendAsync(PacketType.RsaPublicKey, Utils.RsaGetPublicKey(Utils.RsaPrivateKeyXmlString), false);
-					clientSocket.ReceiveLoop(PacketProcessor.ProcessPacket);
-				}
-			}
-			catch (Exception ex)
-			{
-				Logger.Log(ex);
-			}
-			finally
-			{
-				listener.Close();
-			}
+			Clients.Client(connectionId).ServerToClient(message);
+			//Clients.All.ServerToClient(connectionId, message);
 		}
 	}
 }

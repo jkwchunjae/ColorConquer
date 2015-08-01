@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
 using Extensions;
-using Common;
 
-namespace Server
+namespace ColorConquerServer
 {
 	public static class ColorConquerCenter
 	{
