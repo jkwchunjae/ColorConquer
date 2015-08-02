@@ -34,7 +34,8 @@ namespace ColorConquerServer
 		GameFinished,
 		#endregion
 
-		#region Others
+		#region Others (Both)
+		ChatChannel,
 		ChatRoom,
 		Shutdown,
 		#endregion

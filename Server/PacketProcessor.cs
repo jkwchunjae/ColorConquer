@@ -152,6 +152,20 @@ namespace ColorConquerServer
 						break;
 					}
 				#endregion
+				#region ChatChannel
+				case PacketType.ChatChannel:
+					{
+						if (!ColorConquerCenter.UserRoomDic.ContainsKey(user)) break;
+						try
+						{
+							dynamic obj = JsonConvert.DeserializeObject(json);
+							var message = (string)obj.message;
+							ChatChannel(user, message);
+						}
+						catch { }
+						break;
+					}
+				#endregion
 				#region TryStartGame
 				case PacketType.TryStartGame:
 					{
@@ -337,6 +351,14 @@ namespace ColorConquerServer
 		}
 		#endregion
 		#region ChatRoom
+		public static void ChatChannel(this User speaker, string message)
+		{
+			dynamic obj = new ExpandoObject();
+			obj.speakerName = speaker.UserName;
+			obj.message = message;
+			string json = JsonConvert.SerializeObject(obj);
+			BroadcastMessage(PacketType.ChatChannel, json, includeRoom: false);
+		}
 		public static void ChatRoom(this User user, string speakerName, string message)
 		{
 			dynamic obj = new ExpandoObject();

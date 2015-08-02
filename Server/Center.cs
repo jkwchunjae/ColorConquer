@@ -21,6 +21,7 @@ namespace ColorConquerServer
 			UserRoomDic = new ConcurrentDictionary<User, Room>();
 		}
 
+		#region Enter, Leave Channel
 		public static bool EnterChannel(User user)
 		{
 			"EnterUser".Dump();
@@ -39,7 +40,9 @@ namespace ColorConquerServer
 			UserRoomDic.TryRemove(user, out room); // dic 에서도 지운다.
 			PacketProcessor.SendChannelUserList();
 		}
+		#endregion
 
+		#region Create, Enter, Leave Room
 		public static bool CreateRoom(User user, string roomName)
 		{
 			"CreateRoom: {0}".With(roomName).Dump();
@@ -125,6 +128,7 @@ namespace ColorConquerServer
 			PacketProcessor.SendChannelUserList();
 			return true;
 		}
+		#endregion
 
 		public static void BroadcastRoomList()
 		{
