@@ -26,7 +26,9 @@ namespace ColorConquerServer
 			"EnterUser".Dump();
 			if (user.UserName == null || user.UserName == string.Empty || user.UserName == "")
 				return false;
-			return UserRoomDic.TryAdd(user, null);
+			UserRoomDic.TryAdd(user, null);
+			PacketProcessor.SendChannelUserList();
+			return true;
 		}
 
 		public static void LeaveChannel(User user)
@@ -35,6 +37,7 @@ namespace ColorConquerServer
 			LeaveRoom(user);
 			Room room;
 			UserRoomDic.TryRemove(user, out room); // dic 에서도 지운다.
+			PacketProcessor.SendChannelUserList();
 		}
 
 		public static bool CreateRoom(User user, string roomName)
@@ -68,6 +71,7 @@ namespace ColorConquerServer
 				{
 					UserRoomDic[user] = room;
 					"EnterRoom Success".Dump();
+					PacketProcessor.SendChannelUserList();
 					return true;
 				}
 			}
@@ -90,6 +94,7 @@ namespace ColorConquerServer
 				{
 					UserRoomDic[user] = room;
 					"EnterRoomMonitor Success".Dump();
+					PacketProcessor.SendChannelUserList();
 					return true;
 				}
 			}
@@ -117,6 +122,7 @@ namespace ColorConquerServer
 				UserRoomDic.TryUpdate(user, null, room);
 				"LeaveRoom Success".Dump();
 			}
+			PacketProcessor.SendChannelUserList();
 			return true;
 		}
 

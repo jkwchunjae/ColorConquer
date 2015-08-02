@@ -234,6 +234,17 @@ namespace ColorConquerServer
 		}
 
 		#region Broadcasting
+		public static void BroadcastMessage(PacketType packetType, string json, bool includeRoom = false)
+		{
+			foreach (var user in ColorConquerCenter.UserRoomDic.Where(e => (includeRoom ? true : e.Value == null)).Select(e => e.Key))
+			{
+				lock (user)
+				{
+					if (user == null) continue;
+					user.SendAsync(packetType, json);
+				}
+			}
+		}
 		static void BroadcastMessage(this Room room, PacketType packetType, string json, bool includeMonitor = true)
 		{
 			foreach (var user in room.GetUsers(includeMonitor))
@@ -300,6 +311,23 @@ namespace ColorConquerServer
 		}
 		#endregion
 		#region SendUserList
+		public static void SendChannelUserList()
+		{
+			dynamic obj = new ExpandoObject();
+
+			lock (ColorConquerCenter.UserRoomDic)
+			{
+				obj = ColorConquerCenter.UserRoomDic
+					.Select(e => new
+					{
+						userName = e.Key.UserName,
+						userImage = e.Key.UserImage,
+						roomName = e.Value == null ? "" : e.Value.RoomName
+					}).ToArray();
+			}
+			string json = JsonConvert.SerializeObject(obj);
+			BroadcastMessage(PacketType.UserList, json, includeRoom: false);
+		}
 		public static void SendUserList(this Room room)
 		{
 			dynamic obj = new ExpandoObject();
