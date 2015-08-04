@@ -146,6 +146,8 @@ namespace ColorConquerServer
 						{
 							dynamic obj = JsonConvert.DeserializeObject(json);
 							var message = (string)obj.message;
+							if (message == null || message.Length == 0)
+								break;
 							room.Chat(user, message);
 						}
 						catch { }
@@ -160,6 +162,8 @@ namespace ColorConquerServer
 						{
 							dynamic obj = JsonConvert.DeserializeObject(json);
 							var message = (string)obj.message;
+							if (message == null || message.Length == 0)
+								break;
 							ChatChannel(user, message);
 						}
 						catch { }
