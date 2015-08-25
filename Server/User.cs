@@ -38,4 +38,9 @@ namespace ColorConquerServer
 			CurrentColor = currentColor;
 		}
 	}
+
+	public class Ai : User
+	{
+
+	}
 }

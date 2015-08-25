@@ -102,6 +102,10 @@ namespace ColorConquerServer
 
 			if (user == Alice)
 			{
+				if (Bob is Ai)
+				{
+					Bob = null;
+				}
 				Alice = Bob;
 				Bob = null;
 			}
@@ -111,6 +115,21 @@ namespace ColorConquerServer
 			}
 			this.SendUserList();
 			ColorConquerCenter.RoomList.UpdateJsonString();
+		}
+
+		public void EnterAi()
+		{
+			if (Alice == null) throw new Exception("Alice만 AI를 추가할 수 있습니다.");
+			if (Bob != null) throw new Exception("방이 꽉 차있으면 AI를 추가할 수 없습니다.");
+			if (Bob is Ai) throw new Exception("이미 AI가 설정되어 있습니다.");
+
+			Bob = new Ai();
+		}
+
+		public void LeaveAi()
+		{
+			if (!(Bob is Ai)) throw new Exception("AI가 없습니다.");
+			Bob = null;
 		}
 
 		public bool EnterMonitor(User user)
