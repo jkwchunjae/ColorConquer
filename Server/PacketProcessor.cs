@@ -216,26 +216,43 @@ namespace ColorConquerServer
 					{
 						if (!ColorConquerCenter.UserRoomDic.ContainsKey(user)) break;
 						var room = ColorConquerCenter.UserRoomDic[user];
+
+						var result = false;
 						try
 						{
 							dynamic obj = JsonConvert.DeserializeObject(json);
 							var color = (Color)Enum.Parse(typeof(Color), ((string)obj.color).ToUpper());
 							room.Game.SetColor(user, color);
 							room.ResultClickCell(user, true, "");
+							result = true;
 						}
 						catch (SetColorException ex)
 						{
 							Logger.Log(ex);
+							result = false;
 							room.ResultClickCell(user, false, ex.Message);
 						}
 						catch (Exception ex)
 						{
 							Logger.Log(ex);
+							result = false;
 							room.ResultClickCell(user, false, "알 수 없는 에러입니다.");
 						}
+
 						if (room.Game.IsFinished)
 						{
 							room.OnFinish(room.Game.Winner, room.Game.Loser);
+						}
+						else if (room.IsAlice(user) && result && room.IsBobAi)
+						{
+							// Alice의 셀 클릭이 성공적이고, Bob이 Ai 일 경우
+							// Ai 로직은 여기로 들어가면 된다.
+							// 잘 계산해서 room.Game.SetColor(bob, color) 하면 된다.
+
+							/*
+							 * var color = GetAiColor(...);
+							 * room.Game.SetColorAi(color); // SetColorAi 함수 만듬.
+							*/
 						}
 						break;
 					}

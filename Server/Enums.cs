@@ -11,6 +11,8 @@ namespace ColorConquerServer
 		#region Client -> Server
 		TryEnterChannel,
 		RequestRoomList,
+		TryInsertAi,
+		TryRemoveAi,
 		TryCreateRoom,
 		TryEnterRoom,
 		TryEnterRoomMonitor,

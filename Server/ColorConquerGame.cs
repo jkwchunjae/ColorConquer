@@ -241,6 +241,11 @@ namespace ColorConquerServer
 				#endregion
 			}
 		}
+
+		public void SetColorAi(Color color)
+		{
+			SetColor(Bob, color);
+		}
 		#endregion
 
 		bool IsValid(int row, int col)

@@ -40,6 +40,7 @@ namespace ColorConquerServer
 		public bool IsEmpty { get { return (Alice == null && Bob == null); } }
 		public bool IsFull { get { return (Alice != null && Bob != null); } }
 		public bool IsGameRunning { get { return Game != null && Game.IsRunning; } }
+		public bool IsBobAi { get { return Bob is Ai; } }
 
 		public IEnumerable<User> GetUsers(bool includeMonitor = true)
 		{
