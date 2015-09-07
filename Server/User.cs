@@ -20,6 +20,8 @@ namespace ColorConquerServer
 
 		public Color CurrentColor;
 
+		public User() { }
+
 		public User(Socket socket)
 		{
 			Socket = socket;
@@ -41,6 +43,5 @@ namespace ColorConquerServer
 
 	public class Ai : User
 	{
-
 	}
 }
