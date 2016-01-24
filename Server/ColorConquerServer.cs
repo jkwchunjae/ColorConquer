@@ -54,6 +54,7 @@ namespace ColorConquerServer
 		public override Task OnConnected()
 		{
 			"Connected".Dump();
+			Context.User.Identity.Name.Dump("UserName:");
 			_userDic.TryAdd(Context.ConnectionId, new User(Context));
 			return base.OnConnected();
 		}

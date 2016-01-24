@@ -40,8 +40,8 @@ namespace ColorConquerServer
 		{
 			switch (packetType)
 			{
-				#region TryEnterChannel
-				case PacketType.TryEnterChannel:
+				#region TryEnterLobby
+				case PacketType.TryEnterLobby:
 					{
 						try
 						{
@@ -49,12 +49,12 @@ namespace ColorConquerServer
 							user.UserId = (string)obj.userId;
 							user.UserName = (string)obj.userName;
 							user.UserImage = (string)obj.userImage;
-							var result = ColorConquerCenter.EnterChannel(user);
-							user.ResultEnterChannel(result);
+							var result = ColorConquerCenter.EnterLobby(user);
+							user.ResultEnterLobby(result);
 						}
 						catch
 						{
-							user.ResultEnterChannel(false);
+							user.ResultEnterLobby(false);
 						}
 						break;
 					}
@@ -77,8 +77,9 @@ namespace ColorConquerServer
 						{
 							dynamic obj = JsonConvert.DeserializeObject(json);
 							var roomName = (string)obj.roomName;
-							var result = ColorConquerCenter.CreateRoom(user, roomName);
-							user.ResultEnterRoom(result, roomName);
+							Room room;
+							var result = ColorConquerCenter.CreateRoom(user, roomName, out room);
+							user.ResultEnterRoom(result, room.Id);
 						}
 						catch
 						{
@@ -93,9 +94,9 @@ namespace ColorConquerServer
 						try
 						{
 							dynamic obj = JsonConvert.DeserializeObject(json);
-							var roomName = (string)obj.roomName;
-							var result = ColorConquerCenter.EnterRoom(user, roomName);
-							user.ResultEnterRoom(result, roomName);
+							var roomId = (int)obj.roomId;
+							var result = ColorConquerCenter.EnterRoom(user, roomId);
+							user.ResultEnterRoom(result, roomId);
 						}
 						catch
 						{
@@ -110,9 +111,9 @@ namespace ColorConquerServer
 						try
 						{
 							dynamic obj = JsonConvert.DeserializeObject(json);
-							var roomName = (string)obj.roomName;
-							var result = ColorConquerCenter.EnterRoomMonitor(user, roomName);
-							user.ResultEnterRoomMonitor(result, roomName);
+							var roomId = (int)obj.roomId;
+							var result = ColorConquerCenter.EnterRoomMonitor(user, roomId);
+							user.ResultEnterRoomMonitor(result, roomId);
 						}
 						catch (Exception ex)
 						{
@@ -154,8 +155,8 @@ namespace ColorConquerServer
 						break;
 					}
 				#endregion
-				#region ChatChannel
-				case PacketType.ChatChannel:
+				#region ChatLobby
+				case PacketType.ChatLobby:
 					{
 						if (!ColorConquerCenter.UserRoomDic.ContainsKey(user)) break;
 						try
@@ -164,7 +165,7 @@ namespace ColorConquerServer
 							var message = (string)obj.message;
 							if (message == null || message.Length == 0)
 								break;
-							ChatChannel(user, message);
+							ChatLobby(user, message);
 						}
 						catch { }
 						break;
@@ -260,7 +261,7 @@ namespace ColorConquerServer
 				#region Shutdown
 				case PacketType.Shutdown:
 					{
-						ColorConquerCenter.LeaveChannel(user);
+						ColorConquerCenter.LeaveLobby(user);
 						break;
 					}
 				#endregion
@@ -293,14 +294,14 @@ namespace ColorConquerServer
 		}
 		#endregion
 
-		#region ResultEnterChannel
-		public static void ResultEnterChannel(this User user, bool result)
+		#region ResultEnterLobby
+		public static void ResultEnterLobby(this User user, bool result)
 		{
 			dynamic obj = new ExpandoObject();
 			obj.result = result.ToString().ToLower();
 			obj.userName = user.UserName;
 			string json = JsonConvert.SerializeObject(obj);
-			user.SendAsync(PacketType.ResultEnterChannel, json);
+			user.SendAsync(PacketType.ResultEnterLobby, json);
 		}
 		#endregion
 		#region ResultRoomList
@@ -310,26 +311,26 @@ namespace ColorConquerServer
 		}
 		#endregion
 		#region ResultEnterRoom
-		public static void ResultEnterRoom(this User user, bool result, string roomName = null)
+		public static void ResultEnterRoom(this User user, bool result, int roomId = 0)
 		{
 			dynamic obj = new ExpandoObject();
 			obj.result = result.ToString().ToLower();
 			if (result)
 			{
-				obj.roomName = roomName;
+				obj.roomId = roomId;
 			}
 			string json = JsonConvert.SerializeObject(obj);
 			user.SendAsync(PacketType.ResultEnterRoom, json);
 		}
 		#endregion
 		#region ResultEnterRoomMonitor
-		public static void ResultEnterRoomMonitor(this User user, bool result, string roomName = null)
+		public static void ResultEnterRoomMonitor(this User user, bool result, int roomId = 0)
 		{
 			dynamic obj = new ExpandoObject();
 			obj.result = result.ToString().ToLower();
 			if (result)
 			{
-				obj.roomName = roomName;
+				obj.roomId = roomId;
 			}
 			string json = JsonConvert.SerializeObject(obj);
 			user.SendAsync(PacketType.ResultEnterRoomMonitor, json);
@@ -346,7 +347,7 @@ namespace ColorConquerServer
 		}
 		#endregion
 		#region SendUserList
-		public static void SendChannelUserList()
+		public static void SendLobbyUserList()
 		{
 			dynamic obj = new ExpandoObject();
 
@@ -372,13 +373,13 @@ namespace ColorConquerServer
 		}
 		#endregion
 		#region ChatRoom
-		public static void ChatChannel(this User speaker, string message)
+		public static void ChatLobby(this User speaker, string message)
 		{
 			dynamic obj = new ExpandoObject();
 			obj.speakerName = speaker.UserName;
 			obj.message = message;
 			string json = JsonConvert.SerializeObject(obj);
-			BroadcastMessage(PacketType.ChatChannel, json, includeRoom: false);
+			BroadcastMessage(PacketType.ChatLobby, json, includeRoom: false);
 		}
 		public static void ChatRoom(this User user, string speakerName, string message)
 		{

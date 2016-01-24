@@ -9,7 +9,7 @@ namespace ColorConquerServer
 	public enum PacketType
 	{
 		#region Client -> Server
-		TryEnterChannel,
+		TryEnterLobby,
 		RequestRoomList,
 		TryInsertAi,
 		TryRemoveAi,
@@ -24,7 +24,7 @@ namespace ColorConquerServer
 
 		#region Server -> Client
 		RsaPublicKey,
-		ResultEnterChannel,
+		ResultEnterLobby,
 		ResultRoomList,
 		ResultEnterRoom,
 		ResultEnterRoomMonitor,
@@ -37,7 +37,7 @@ namespace ColorConquerServer
 		#endregion
 
 		#region Others (Both)
-		ChatChannel,
+		ChatLobby,
 		ChatRoom,
 		Shutdown,
 		#endregion
@@ -46,7 +46,7 @@ namespace ColorConquerServer
 	public enum UserStatus
 	{
 		None,
-		TryEnterChannel,
+		TryEnterLobby,
 		TryCreateRoom,
 		TryEnterRoom,
 		TryStartGame,
@@ -56,7 +56,7 @@ namespace ColorConquerServer
 	public enum UserPlace
 	{
 		None,
-		Channel,
+		Lobby,
 		Room,
 	}
 

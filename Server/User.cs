@@ -13,7 +13,7 @@ namespace ColorConquerServer
 	{
 		public Socket Socket { get; private set; }
 		public HubCallerContext Context { get; private set; }
-		public String ConnectionId { get; private set; }
+		public string ConnectionId { get; private set; }
 		public string UserId;
 		public string UserName;
 		public string UserImage;

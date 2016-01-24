@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Collections.Concurrent;
 
 namespace ColorConquerServer
 {
@@ -15,6 +16,7 @@ namespace ColorConquerServer
 		HashSet<User> Monitor = new HashSet<User>();
 		public ColorConquerGame Game;
 		public string RoomName;
+		public int Id { get; set; }
 
 		public Room(string roomName)
 		{
@@ -249,13 +251,14 @@ namespace ColorConquerServer
 
 	public class RoomList : List<Room>
 	{
-		Dictionary<string, Room> _roomNameDic = new Dictionary<string, Room>();
+		ConcurrentDictionary<string /* roomName */, Room> _roomNameDic = new ConcurrentDictionary<string, Room>();
+		ConcurrentDictionary<int /* roomId */, Room>_roomIdDic = new ConcurrentDictionary<int, Room>();
 		string _jsonString;
 		public string JsonString { get { return _jsonString; } }
 
 		public RoomList()
 		{
-			this.UpdateJsonString(false);
+			UpdateJsonString(false);
 		}
 
 		public string UpdateJsonString(bool isBroadcast = true)
@@ -265,44 +268,50 @@ namespace ColorConquerServer
 			return _jsonString;
 		}
 
-		public bool CreateRoom(string roomName)
+		public bool CreateRoom(string roomName, out Room room)
 		{
-			if (roomName == null || roomName == string.Empty || roomName == "")
-				return false;
+			room = null;
+			if (string.IsNullOrEmpty(roomName)) return false;
 
-			lock (_roomNameDic)
+			room = new Room(roomName);
+			if (!_roomNameDic.TryAdd(roomName, room))
 			{
-				if (_roomNameDic.ContainsKey(roomName)) return false;
-				var room = new Room(roomName);
-				_roomNameDic.Add(roomName, room);
-				this.Add(room);
+				room = null;
+				return false;
 			}
-			this.UpdateJsonString();
+
+			do
+			{
+				int roomId = StaticRandom.Next(111111, 999999);
+				if (_roomIdDic.TryAdd(roomId, room))
+				{
+					room.Id = roomId;
+					break;
+				}
+			} while (true);
+			Add(room);
+
 			return true;
 		}
 
-		public void DeleteRoom(string roomName)
+		public void DeleteRoom(int roomId)
 		{
-			lock (_roomNameDic)
-			{
-				if (_roomNameDic.ContainsKey(roomName))
-				{
-					var room = _roomNameDic[roomName];
-					_roomNameDic.Remove(roomName);
-					this.Remove(room);
-				}
-			}
-			this.UpdateJsonString();
+			Room deletedRoom;
+			if (!_roomIdDic.TryRemove(roomId, out deletedRoom))
+				return;
+
+			_roomNameDic.TryRemove(deletedRoom.RoomName, out deletedRoom);
+			Remove(deletedRoom);
+			UpdateJsonString();
 		}
 
-		public Room Find(string roomName)
+		public Room Find(int roomId)
 		{
-			lock (_roomNameDic)
-			{
-				if (_roomNameDic.ContainsKey(roomName))
-					return _roomNameDic[roomName];
+			Room room;
+			if (!_roomIdDic.TryGetValue(roomId, out room))
 				return null;
-			}
+
+			return room;
 		}
 	}
 }
