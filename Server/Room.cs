@@ -11,10 +11,12 @@ namespace ColorConquerServer
 {
 	public class Room
 	{
+		User Manager;
 		User Alice, Bob;
 		HashSet<User> Monitor = new HashSet<User>();
 		public ColorConquerGame Game;
 		public string RoomName;
+		public bool IsShowScore = false;
 
 		public Room(string roomName)
 		{
@@ -68,6 +70,11 @@ namespace ColorConquerServer
 			return Bob == user;
 		}
 
+		public bool IsManager(User user)
+		{
+			return Manager == user;
+		}
+
 		#region Enter/Leave User, Monitor
 		public bool EnterUser(User user)
 		{
@@ -85,6 +92,8 @@ namespace ColorConquerServer
 				{
 					return false;
 				}
+				if (Manager == null)
+					Manager = user;
 			}
 			this.SendUserList();
 			ColorConquerCenter.RoomList.UpdateJsonString();
@@ -104,14 +113,17 @@ namespace ColorConquerServer
 			if (user == Alice)
 			{
 				if (Bob is Ai)
-				{
 					Bob = null;
-				}
-				Alice = Bob;
-				Bob = null;
+				if (Manager == Alice)
+					Manager = Bob;
+				Alice = null;
 			}
 			else if (user == Bob)
 			{
+				if (Alice is Ai)
+					Alice = null;
+				if (Manager == Bob)
+					Manager = Alice;
 				Bob = null;
 			}
 			this.SendUserList();
@@ -120,17 +132,42 @@ namespace ColorConquerServer
 
 		public void EnterAi()
 		{
-			if (Alice == null) throw new Exception("Alice만 AI를 추가할 수 있습니다.");
-			if (Bob != null) throw new Exception("방이 꽉 차있으면 AI를 추가할 수 없습니다.");
-			if (Bob is Ai) throw new Exception("이미 AI가 설정되어 있습니다.");
+			//if (Alice == null) throw new Exception("Alice만 AI를 추가할 수 있습니다.");
+			//if (Bob != null) throw new Exception("방이 꽉 차있으면 AI를 추가할 수 없습니다.");
+			//if (Bob is Ai) throw new Exception("이미 AI가 설정되어 있습니다.");
+			//Bob = new Ai();
 
-			Bob = new Ai();
+			if (Alice == null && Bob == null) throw new Exception("방이 꽉 차있으면 AI를 추가할 수 없습니다.");
+			if (Alice is Ai || Bob is Ai) throw new Exception("이미 AI가 설정되어 있습니다.");
+
+			if (Alice == null)
+			{
+				Alice = new Ai();
+			}
+			else if (Bob == null)
+			{
+				Bob = new Ai();
+			}
+			else
+			{
+				throw new Exception("알수 없는 오류입니다.");
+			}
 		}
 
 		public void LeaveAi()
 		{
-			if (!(Bob is Ai)) throw new Exception("AI가 없습니다.");
-			Bob = null;
+			if (Alice is Ai)
+			{
+				Alice = null;
+			}
+			else if (Bob is Ai)
+			{
+				Bob = null;
+			}
+			else
+			{
+				throw new Exception("AI가 없습니다.");
+			}
 		}
 
 		public bool EnterMonitor(User user)
@@ -174,20 +211,13 @@ namespace ColorConquerServer
 			// 중간에 유저가 나가서 끝나는 경우도 있으니까..
 			// if (!Game.IsFinished) return;
 
+			Manager = loser;
+
 			#region DB
 			#endregion
 
 			#region Broadcast message
 			this.ResultGameFinish(winner, loser);
-			#endregion
-
-			#region Reset Alice, Bob
-			if (loser == Bob)
-			{
-				var tmp = Bob;
-				Bob = Alice;
-				Alice = tmp;
-			}
 			#endregion
 
 			Game = null;
@@ -227,7 +257,7 @@ namespace ColorConquerServer
 		public void StartGame(User user, int size, int countColor)
 		{
 			if (!IsFull) throw new GameStartException("방이 꽉차지 않았습니다.");
-			if (user != Alice) throw new GameStartException("게임 시작은 패배자만 할 수 있습니다.");
+			if (!IsManager(user)) throw new GameStartException("게임 시작 권한이 없습니다.");
 			if (IsGameRunning) throw new GameStartException("현재 게임이 진행중입니다.");
 			if (!(size >= 7 && size <= 15)) throw new GameStartException("크기가 적절하지 않습니다. 7~15");
 			if (size % 2 == 0) throw new GameStartException("크기는 홀수여야 합니다.");

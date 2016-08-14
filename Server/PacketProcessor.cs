@@ -223,20 +223,20 @@ namespace ColorConquerServer
 							dynamic obj = JsonConvert.DeserializeObject(json);
 							var color = (Color)Enum.Parse(typeof(Color), ((string)obj.color).ToUpper());
 							room.Game.SetColor(user, color);
-							room.ResultClickCell(user, true, "");
+							room.ResultClickCell(user, result: true);
 							result = true;
 						}
 						catch (SetColorException ex)
 						{
 							Logger.Log(ex);
 							result = false;
-							room.ResultClickCell(user, false, ex.Message);
+							room.ResultClickCell(user, failureMessage: ex.Message);
 						}
 						catch (Exception ex)
 						{
 							Logger.Log(ex);
 							result = false;
-							room.ResultClickCell(user, false, "알 수 없는 에러입니다.");
+							room.ResultClickCell(user, failureMessage: "알 수 없는 에러입니다.");
 						}
 
 						if (room.Game.IsFinished)
@@ -366,7 +366,13 @@ namespace ColorConquerServer
 		public static void SendUserList(this Room room)
 		{
 			dynamic obj = new ExpandoObject();
-			obj = room.GetUsers().Select(e => new { userName = e.UserName, userImage = e.UserImage, userType = (room.IsAlice(e) ? "Alice" : (room.IsBob(e) ? "Bob" : "Monitor")) }).ToArray();
+			obj = room.GetUsers().Select(e => new
+			{
+				userName = e.UserName,
+				userImage = e.UserImage,
+				userType = (room.IsAlice(e) ? "Alice" : (room.IsBob(e) ? "Bob" : "Monitor")),
+				isManager = room.IsManager(e) ? "true" : "false",
+			}).ToArray();
 			string json = JsonConvert.SerializeObject(obj);
 			room.BroadcastMessage(PacketType.UserList, json);
 		}
@@ -402,10 +408,10 @@ namespace ColorConquerServer
 				obj.currentTurnName = game.CurrentTurn.UserName;
 				obj.aliceName = game.Alice.UserName;
 				obj.aliceColor = game.Alice.CurrentColor.ToString();
-				obj.aliceScore = game.GetUserScore(game.Alice);
+				obj.aliceScore = room.IsShowScore ? game.GetUserScore(game.Alice).ToString() : "";
 				obj.bobName = game.Bob.UserName;
 				obj.bobColor = game.Bob.CurrentColor.ToString();
-				obj.bobScore = game.GetUserScore(game.Bob);
+				obj.bobScore = room.IsShowScore ? game.GetUserScore(game.Bob).ToString() : "";
 				obj.cellsColor = game.CellsColor;
 			}
 			else
@@ -420,7 +426,7 @@ namespace ColorConquerServer
 		}
 		#endregion
 		#region ResultClickCell
-		public static void ResultClickCell(this Room room, User clickUser, bool result, string failureMessage)
+		public static void ResultClickCell(this Room room, User clickUser, bool result = false, string failureMessage = "")
 		{
 			dynamic obj = new ExpandoObject();
 			obj.result = result.ToString().ToLower();
@@ -432,10 +438,10 @@ namespace ColorConquerServer
 				obj.currentTurnName = game.CurrentTurn.UserName;
 				obj.aliceName = game.Alice.UserName;
 				obj.aliceColor = game.Alice.CurrentColor.ToString();
-				obj.aliceScore = game.GetUserScore(game.Alice);
+				obj.aliceScore = room.IsShowScore ? game.GetUserScore(game.Alice).ToString() : "";
 				obj.bobName = game.Bob.UserName;
 				obj.bobColor = game.Bob.CurrentColor.ToString();
-				obj.bobScore = game.GetUserScore(game.Bob);
+				obj.bobScore = room.IsShowScore ? game.GetUserScore(game.Bob).ToString() : "";
 				obj.cellsColor = game.CellsColor;
 			}
 			else
