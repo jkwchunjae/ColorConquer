@@ -42,6 +42,7 @@ namespace ColorConquerServer
 		public bool IsEmpty { get { return (Alice == null && Bob == null); } }
 		public bool IsFull { get { return (Alice != null && Bob != null); } }
 		public bool IsGameRunning { get { return Game != null && Game.IsRunning; } }
+		public bool IsAliceAi { get { return Alice is Ai; } }
 		public bool IsBobAi { get { return Bob is Ai; } }
 
 		public IEnumerable<User> GetUsers(bool includeMonitor = true)
@@ -73,6 +74,11 @@ namespace ColorConquerServer
 		public bool IsManager(User user)
 		{
 			return Manager == user;
+		}
+		
+		public bool IsAi(User user)
+		{
+			return user is Ai;
 		}
 
 		#region Enter/Leave User, Monitor
@@ -132,11 +138,6 @@ namespace ColorConquerServer
 
 		public void EnterAi()
 		{
-			//if (Alice == null) throw new Exception("Alice만 AI를 추가할 수 있습니다.");
-			//if (Bob != null) throw new Exception("방이 꽉 차있으면 AI를 추가할 수 없습니다.");
-			//if (Bob is Ai) throw new Exception("이미 AI가 설정되어 있습니다.");
-			//Bob = new Ai();
-
 			if (Alice == null && Bob == null) throw new Exception("방이 꽉 차있으면 AI를 추가할 수 없습니다.");
 			if (Alice is Ai || Bob is Ai) throw new Exception("이미 AI가 설정되어 있습니다.");
 
@@ -152,6 +153,7 @@ namespace ColorConquerServer
 			{
 				throw new Exception("알수 없는 오류입니다.");
 			}
+			this.SendUserList();
 		}
 
 		public void LeaveAi()
@@ -168,6 +170,7 @@ namespace ColorConquerServer
 			{
 				throw new Exception("AI가 없습니다.");
 			}
+			this.SendUserList();
 		}
 
 		public bool EnterMonitor(User user)
@@ -211,7 +214,8 @@ namespace ColorConquerServer
 			// 중간에 유저가 나가서 끝나는 경우도 있으니까..
 			// if (!Game.IsFinished) return;
 
-			Manager = loser;
+			if (!(loser is Ai))
+				Manager = loser;
 
 			#region DB
 			#endregion
