@@ -486,6 +486,8 @@ namespace ColorConquerServer
 			obj.loserName = loser.UserName;
 			obj.winnerScore = room.Game.GetUserScore(winner);
 			obj.loserScore = room.Game.GetUserScore(loser);
+			obj.aliceScore = room.Game.GetAliceScore();
+			obj.bobScore = room.Game.GetBobScore();
 			string json = JsonConvert.SerializeObject(obj);
 			room.BroadcastMessage(PacketType.GameFinished, json);
 		}

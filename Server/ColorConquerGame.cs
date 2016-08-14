@@ -127,6 +127,16 @@ namespace ColorConquerServer
 			return MyCells[user].Count + remainCount;
 		}
 
+		public int GetAliceScore()
+		{
+			return GetUserScore(Alice);
+		}
+
+		public int GetBobScore()
+		{
+			return GetUserScore(Bob);
+		}
+
 		public bool StartGame()
 		{
 			if (Alice == null || Bob == null) return false;
