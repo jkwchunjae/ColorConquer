@@ -104,6 +104,35 @@ namespace ColorConquerServer
 						break;
 					}
 				#endregion
+				#region TryInsertAi
+				case PacketType.TryInsertAi:
+					{
+						try
+						{
+							if (!ColorConquerCenter.UserRoomDic.ContainsKey(user)) break;
+							var room = ColorConquerCenter.UserRoomDic[user];
+
+							room.EnterAi();
+						}
+						catch
+						{
+						}
+						break;
+					}
+				#endregion
+				#region TryRemoveAi
+				case PacketType.TryRemoveAi:
+					{
+						try
+						{
+
+						}
+						catch
+						{
+						}
+						break;
+					}
+				#endregion
 				#region TryEnterRoomMonitor
 				case PacketType.TryEnterRoomMonitor:
 					{
@@ -287,6 +316,7 @@ namespace ColorConquerServer
 				lock (user)
 				{
 					if (user == null) continue;
+					if (user is Ai) continue;
 					user.SendAsync(packetType, json);
 				}
 			}
@@ -345,6 +375,24 @@ namespace ColorConquerServer
 			user.SendAsync(PacketType.ResultLeaveRoom, json);
 		}
 		#endregion
+		#region ResultInsertAi
+		public static void ResultInsertAi(this User user, bool result)
+		{
+			dynamic obj = new ExpandoObject();
+			obj.result = result.ToString().ToLower();
+			string json = JsonConvert.SerializeObject(obj);
+			user.SendAsync(PacketType.ResultInsertAi, json);
+		}
+		#endregion
+		#region ResultRemoveAi
+		public static void ResultRemoveAi(this User user, bool result)
+		{
+			dynamic obj = new ExpandoObject();
+			obj.result = result.ToString().ToLower();
+			string json = JsonConvert.SerializeObject(obj);
+			user.SendAsync(PacketType.ResultRemoveAi, json);
+		}
+		#endregion
 		#region SendUserList
 		public static void SendChannelUserList()
 		{
@@ -366,12 +414,13 @@ namespace ColorConquerServer
 		public static void SendUserList(this Room room)
 		{
 			dynamic obj = new ExpandoObject();
-			obj = room.GetUsers().Select(e => new
+			obj = room.GetUsers().Select(user => new
 			{
-				userName = e.UserName,
-				userImage = e.UserImage,
-				userType = (room.IsAlice(e) ? "Alice" : (room.IsBob(e) ? "Bob" : "Monitor")),
-				isManager = room.IsManager(e) ? "true" : "false",
+				userName = user.UserName,
+				userImage = user.UserImage,
+				userType = (room.IsAlice(user) ? "Alice" : (room.IsBob(user) ? "Bob" : "Monitor")),
+				isManager = room.IsManager(user),
+				isAi = room.IsAi(user),
 			}).ToArray();
 			string json = JsonConvert.SerializeObject(obj);
 			room.BroadcastMessage(PacketType.UserList, json);

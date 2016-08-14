@@ -43,5 +43,9 @@ namespace ColorConquerServer
 
 	public class Ai : User
 	{
+		public Ai()
+		{
+			UserName = "알파고";
+		}
 	}
 }
